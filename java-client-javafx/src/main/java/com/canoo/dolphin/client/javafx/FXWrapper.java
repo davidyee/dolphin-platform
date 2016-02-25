@@ -154,6 +154,9 @@ public class FXWrapper {
                 return value;
             }
         });
+        if(dolphinProperty.get() == null) {
+            dolphinProperty.set(property.getValue().doubleValue());
+        }
         return property;
     }
 
@@ -163,7 +166,7 @@ public class FXWrapper {
      * @return the JavaFX property
      */
     public static javafx.beans.property.Property<Number> wrapIntegerInNumberProperty(final Property<Integer> dolphinProperty) {
-        final javafx.beans.property.Property<Number> property = new SimpleDoubleProperty();
+        final javafx.beans.property.Property<Number> property = new SimpleIntegerProperty();
         FXBinder.bind(property).bidirectionalTo(dolphinProperty, new BidirectionalConverter<Integer, Number>() {
             @Override
             public Integer convertBack(Number value) {
@@ -178,6 +181,9 @@ public class FXWrapper {
                 return value;
             }
         });
+        if(dolphinProperty.get() == null) {
+            dolphinProperty.set(property.getValue().intValue());
+        }
         return property;
     }
 
