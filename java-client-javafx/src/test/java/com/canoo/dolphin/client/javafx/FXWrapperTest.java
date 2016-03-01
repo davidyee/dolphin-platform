@@ -10,6 +10,8 @@ import org.testng.annotations.Test;
  */
 public class FXWrapperTest {
 
+    private static final double DELTA = 1e-15;
+
     @Test
     public void WrapDoubleInNumberPropertyEmptyTest() {
 
@@ -20,8 +22,8 @@ public class FXWrapperTest {
         javafx.beans.property.Property<Number> javafxProperty = FXWrapper.wrapDoubleInNumberProperty(doubleDolphinProperty);
 
         //Then:
-        Assert.assertEquals(doubleDolphinProperty.get(), 0.0);
-        Assert.assertEquals(javafxProperty.getValue(), 0.0);
+        Assert.assertEquals(doubleDolphinProperty.get().doubleValue(), 0.0, DELTA);
+        Assert.assertEquals(javafxProperty.getValue().doubleValue(), 0.0, DELTA);
     }
 
     @Test
@@ -35,8 +37,8 @@ public class FXWrapperTest {
         javafx.beans.property.Property<Number> javafxProperty = FXWrapper.wrapDoubleInNumberProperty(doubleDolphinProperty);
 
         //Then:
-        Assert.assertEquals(doubleDolphinProperty.get(), 12.0);
-        Assert.assertEquals(javafxProperty.getValue(), 12.0);
+        Assert.assertEquals(doubleDolphinProperty.get().doubleValue(), 12.0, DELTA);
+        Assert.assertEquals(javafxProperty.getValue().doubleValue(), 12.0, DELTA);
     }
 
     @Test
@@ -50,8 +52,8 @@ public class FXWrapperTest {
         doubleDolphinProperty.set(12.0);
 
         //Then:
-        Assert.assertEquals(doubleDolphinProperty.get(), 12.0);
-        Assert.assertEquals(javafxProperty.getValue(), 12.0);
+        Assert.assertEquals(doubleDolphinProperty.get().doubleValue(), 12.0, DELTA);
+        Assert.assertEquals(javafxProperty.getValue().doubleValue(), 12.0, DELTA);
     }
 
     @Test
@@ -65,8 +67,8 @@ public class FXWrapperTest {
         javafxProperty.setValue(12.0);
 
         //Then:
-        Assert.assertEquals(doubleDolphinProperty.get(), 12.0);
-        Assert.assertEquals(javafxProperty.getValue(), 12.0);
+        Assert.assertEquals(doubleDolphinProperty.get().doubleValue(), 12.0, DELTA);
+        Assert.assertEquals(javafxProperty.getValue().doubleValue(), 12.0, DELTA);
     }
 
 
