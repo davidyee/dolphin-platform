@@ -30,7 +30,7 @@ public class TestDolphinEventBusImpl {
         DolphinEventBus dolphinEventBus = createBus(null);
         dolphinEventBus.subscribe(NO_MATTER, new MessageListener<String>() {
             @Override
-            public void onMessage(Message<String> message) {
+            public void onMessage(Message<?> message) {
 
             }
         });
@@ -50,7 +50,7 @@ public class TestDolphinEventBusImpl {
         final Set<Object> messsages = new HashSet<>();
         horst.subscribe(CHAT_ABOUT_DOLPHIN, new MessageListener() {
             @Override
-            public void onMessage(Message message) {
+            public void onMessage(Message<?> message) {
                 assertEquals(CHAT_ABOUT_DOLPHIN, message.getTopic());
                 messsages.add(message.getData());
                 latch.countDown();
@@ -58,7 +58,7 @@ public class TestDolphinEventBusImpl {
         });
         horst.subscribe(CHAT_ABOUT_SWING, new MessageListener() {
             @Override
-            public void onMessage(Message message) {
+            public void onMessage(Message<?> message) {
                 assertEquals(CHAT_ABOUT_SWING, message.getTopic());
                 messsages.add(message.getData());
                 latch.countDown();
@@ -81,7 +81,7 @@ public class TestDolphinEventBusImpl {
         final AtomicInteger atomicInteger = new AtomicInteger();
         Subscription subscription = horst.subscribe(CHAT_ABOUT_DOLPHIN, new MessageListener() {
             @Override
-            public void onMessage(Message message) {
+            public void onMessage(Message<?> message) {
                 assertEquals(CHAT_ABOUT_DOLPHIN, message.getTopic());
                 atomicInteger.incrementAndGet();
             }
@@ -110,7 +110,7 @@ public class TestDolphinEventBusImpl {
         final AtomicInteger atomicInteger = new AtomicInteger();
         horst.subscribe(CHAT_ABOUT_DOLPHIN, new MessageListener() {
             @Override
-            public void onMessage(Message message) {
+            public void onMessage(Message<?> message) {
                 assertEquals(CHAT_ABOUT_DOLPHIN, message.getTopic());
                 atomicInteger.incrementAndGet();
             }
