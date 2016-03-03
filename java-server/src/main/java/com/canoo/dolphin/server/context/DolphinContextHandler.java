@@ -18,6 +18,7 @@ package com.canoo.dolphin.server.context;
 import com.canoo.dolphin.impl.PlatformConstants;
 import com.canoo.dolphin.server.container.ContainerManager;
 import com.canoo.dolphin.server.controller.ControllerRepository;
+import com.canoo.dolphin.server.event.impl2.DolphinEventPublisher;
 import org.opendolphin.core.comm.Command;
 
 import javax.servlet.ServletContext;
@@ -43,6 +44,8 @@ public class DolphinContextHandler {
 
     private ControllerRepository controllerRepository;
 
+    private DolphinEventPublisher eventPublisher;
+
     private DolphinContextHandler() {
         ServiceLoader<ContainerManager> serviceLoader = ServiceLoader.load(ContainerManager.class);
         Iterator<ContainerManager> serviceIterator = serviceLoader.iterator();
@@ -56,6 +59,11 @@ public class DolphinContextHandler {
             throw new RuntimeException("No " + ContainerManager.class + " found!");
         }
         controllerRepository = new ControllerRepository();
+        eventPublisher = new DolphinEventPublisher();
+    }
+
+    public DolphinEventPublisher getEventPublisher() {
+        return eventPublisher;
     }
 
     public void init(ServletContext servletContext) {

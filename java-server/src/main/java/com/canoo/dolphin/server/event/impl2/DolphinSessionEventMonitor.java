@@ -15,11 +15,11 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public class DolphinSessionEventMonitor {
 
-    public Map<Topic<?>, List<MessageListener<?>>> registeredListeners;
+    private Map<Topic<?>, List<MessageListener<?>>> registeredListeners;
 
     private Lock mapLock = new ReentrantLock();
 
-    public Queue<Message> eventQueue;
+    private Queue<Message> eventQueue;
 
     private Lock eventLock = new ReentrantLock();
 

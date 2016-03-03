@@ -33,7 +33,7 @@ import com.canoo.dolphin.internal.collections.ListMapper;
 import com.canoo.dolphin.server.container.ContainerManager;
 import com.canoo.dolphin.server.controller.ControllerHandler;
 import com.canoo.dolphin.server.controller.ControllerRepository;
-import com.canoo.dolphin.server.event.impl.DolphinEventBusImpl;
+import com.canoo.dolphin.server.event.impl2.DolphinSessionEventMonitor;
 import com.canoo.dolphin.server.impl.ServerControllerActionCallBean;
 import com.canoo.dolphin.server.impl.ServerEventDispatcher;
 import com.canoo.dolphin.server.impl.ServerPlatformBeanRepository;
@@ -70,6 +70,8 @@ public class DolphinContext {
 
     private final String id;
 
+    private DolphinSessionEventMonitor eventMonitor;
+
     public DolphinContext(ContainerManager containerManager, ControllerRepository controllerRepository) {
 
         //ID
@@ -101,6 +103,8 @@ public class DolphinContext {
 
         //Init ControllerHandler
         controllerHandler = new ControllerHandler(containerManager, beanManager, controllerRepository);
+
+        eventMonitor = new DolphinSessionEventMonitor();
 
         //Register commands
         registerDolphinPlatformDefaultCommands();
@@ -202,15 +206,11 @@ public class DolphinContext {
     }
 
     private void onReleaseEventBus() {
-        DolphinEventBusImpl.getInstance().release();
+        eventMonitor.release();
     }
 
     private void onPollEventBus() {
-        try {
-            DolphinEventBusImpl.getInstance().longPoll();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
+        eventMonitor.waitForEvents();
     }
 
     public DefaultServerDolphin getDolphin() {
@@ -236,5 +236,9 @@ public class DolphinContext {
             results.addAll(dolphin.getServerConnector().receive(command));
         }
         return results;
+    }
+
+    public DolphinSessionEventMonitor getEventMonitor() {
+        return eventMonitor;
     }
 }
