@@ -156,14 +156,6 @@ public class DolphinContext {
                         onPollEventBus();
                     }
                 });
-
-                registry.register(PlatformConstants.RELEASE_EVENT_BUS_COMMAND_NAME, new CommandHandler() {
-                    @Override
-                    public void handleCommand(Command command, List response) {
-                        onReleaseEventBus();
-                    }
-                });
-
             }
         });
     }
@@ -203,10 +195,6 @@ public class DolphinContext {
                     bean.getActionName(), bean.getControllerId(), e);
             bean.setError(true);
         }
-    }
-
-    private void onReleaseEventBus() {
-        eventMonitor.release();
     }
 
     private void onPollEventBus() {

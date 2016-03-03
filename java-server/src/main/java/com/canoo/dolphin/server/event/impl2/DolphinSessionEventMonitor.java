@@ -5,6 +5,8 @@ import com.canoo.dolphin.server.event.MessageListener;
 import com.canoo.dolphin.server.event.Topic;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -28,6 +30,11 @@ public class DolphinSessionEventMonitor {
     private boolean interrupted = false;
 
     private boolean eventPublisher = false;
+
+    public DolphinSessionEventMonitor() {
+        registeredListeners = new HashMap<>();
+        eventQueue = new LinkedList<>();
+    }
 
     public void publishEvent(final Message<?> message) {
         if(isEventPublisher()) {
@@ -59,6 +66,7 @@ public class DolphinSessionEventMonitor {
                     eventAddedCondition.await();
                 } catch (InterruptedException e) {
                 }
+                System.out.println("released");
             }
         } finally {
             eventLock.unlock();
