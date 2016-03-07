@@ -2,9 +2,10 @@ package com.canoo.dolphin.server.event.impl2;
 
 import com.canoo.dolphin.server.event.Message;
 import com.canoo.dolphin.server.event.Topic;
+import com.canoo.dolphin.util.Assert;
 
 /**
- * Created by hendrikebbers on 03.03.16.
+ * Default implementation of {@link Message}
  */
 public class MessageImpl<T> implements Message<T> {
 
@@ -15,6 +16,7 @@ public class MessageImpl<T> implements Message<T> {
     private final long timestamp;
 
     public MessageImpl(Topic<T> topic, T data) {
+        Assert.requireNonNull(topic, "topic");
         this.topic = topic;
         this.data = data;
         this.timestamp = System.currentTimeMillis();

@@ -3,6 +3,7 @@ package com.canoo.dolphin.server.event.impl2;
 import com.canoo.dolphin.server.event.Message;
 import com.canoo.dolphin.server.event.MessageListener;
 import com.canoo.dolphin.server.event.Topic;
+import com.canoo.dolphin.util.Assert;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,24 +11,25 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class DolphinSessionEventMonitor {
 
-    private Map<Topic<?>, List<MessageListener<?>>> registeredListeners;
+    private final Map<Topic<?>, List<MessageListener<?>>> registeredListeners;
 
-    private Lock mapLock = new ReentrantLock();
+    private final Lock mapLock = new ReentrantLock();
 
-    private Queue<Message> eventQueue;
+    private final Queue<Message> eventQueue;
 
-    private Lock eventLock = new ReentrantLock();
+    private final Lock eventLock = new ReentrantLock();
 
-    private Condition eventAddedCondition = eventLock.newCondition();
+    private final Condition eventAddedCondition = eventLock.newCondition();
 
     private boolean interrupted = false;
+
+    private boolean inEventLoop = false;
 
     private boolean eventPublisher = false;
 
@@ -37,6 +39,7 @@ public class DolphinSessionEventMonitor {
     }
 
     public void publishEvent(final Message<?> message) {
+        Assert.requireNonNull(message, "message");
         if(isEventPublisher()) {
             handle(message);
         } else {
@@ -53,11 +56,17 @@ public class DolphinSessionEventMonitor {
     public void waitForEvents() {
         eventLock.lock();
         try {
+            inEventLoop = true;
             interrupted = false;
             while (!interrupted) {
                 while (!interrupted && !eventQueue.isEmpty()) {
                     Message message = eventQueue.poll();
-                    handle(message);
+                    try {
+                        handle(message);
+                    } catch (Exception e) {
+                        //TODO: Exception in message handling
+                        e.printStackTrace();
+                    }
                 }
                 if (interrupted) {
                     return;
@@ -66,35 +75,33 @@ public class DolphinSessionEventMonitor {
                     eventAddedCondition.await();
                 } catch (InterruptedException e) {
                 }
-                System.out.println("released");
             }
         } finally {
+            inEventLoop = false;
             eventLock.unlock();
         }
     }
 
-    public void release() {
+    public boolean release() {
         eventLock.lock();
         try {
+            if(!inEventLoop) {
+                //This will happen if a release was called but no thread is waiting in the waitForEvents
+                //In that case the client should send another release
+                return false;
+            }
+
+            // I don't use thread.interrupt() here because this might interrupt the handling of a message
             interrupted = true;
             eventAddedCondition.signal();
+            return true;
         } finally {
             eventLock.unlock();
         }
     }
 
-    private <T> T callLocked(Callable<T> callable) {
-        try {
-            eventLock.lock();
-            return callable.call();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            eventLock.unlock();
-        }
-    }
-
-    public boolean hasTopic(Topic topic) {
+    public boolean hasTopic(final Topic topic) {
+        Assert.requireNonNull(topic, "topic");
         mapLock.lock();
         try {
             return registeredListeners.keySet().contains(topic);
@@ -103,7 +110,8 @@ public class DolphinSessionEventMonitor {
         }
     }
 
-    private void handle(Message message) {
+    private void handle(final Message message) {
+        Assert.requireNonNull(message, "message");
         Topic<?> topic = message.getTopic();
         List<MessageListener<?>> listeners = null;
 
@@ -124,6 +132,8 @@ public class DolphinSessionEventMonitor {
     }
 
     public <T> void removeListener(final Topic<T> topic, final MessageListener<? super T> handler) {
+        Assert.requireNonNull(topic, "topic");
+        Assert.requireNonNull(handler, "handler");
         mapLock.lock();
         try {
             List<MessageListener<?>> listenersForTopic = registeredListeners.get(topic);
@@ -136,6 +146,8 @@ public class DolphinSessionEventMonitor {
     }
 
     public <T> void addListener(final Topic<T> topic, final MessageListener<? super T> handler) {
+        Assert.requireNonNull(topic, "topic");
+        Assert.requireNonNull(handler, "handler");
         mapLock.lock();
         try {
             List<MessageListener<?>> listenersForTopic = registeredListeners.get(topic);
@@ -154,6 +166,9 @@ public class DolphinSessionEventMonitor {
     }
 
     public void setEventPublisher(boolean eventPublisher) {
+        if(inEventLoop) {
+            throw new RuntimeException("Can not be event publisher if in event loop!");
+        }
         this.eventPublisher = eventPublisher;
     }
 }

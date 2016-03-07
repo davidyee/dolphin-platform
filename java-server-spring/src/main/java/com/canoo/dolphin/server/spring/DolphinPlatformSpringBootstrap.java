@@ -18,9 +18,7 @@ package com.canoo.dolphin.server.spring;
 import com.canoo.dolphin.BeanManager;
 import com.canoo.dolphin.impl.BeanManagerImpl;
 import com.canoo.dolphin.server.context.DolphinContext;
-import com.canoo.dolphin.server.context.DolphinContextHandler;
 import com.canoo.dolphin.server.event.DolphinEventBus;
-import com.canoo.dolphin.server.event.impl2.DolphinEventBusImpl;
 import com.canoo.dolphin.server.servlet.DolphinPlatformBootstrap;
 import org.springframework.boot.context.embedded.ServletContextInitializer;
 import org.springframework.context.annotation.Bean;
@@ -60,7 +58,9 @@ public class DolphinPlatformSpringBootstrap implements ServletContextInitializer
     @Bean
     @Scope("session")
     protected DolphinEventBus createEventBus() {
-        return new DolphinEventBusImpl(DolphinContextHandler.getInstance().getEventPublisher(), DolphinContext.getCurrentContext().getEventMonitor());
+        //TODO: return new event bus
+        return null;
+        //return new DolphinEventBusImpl(DolphinContextHandler.getInstance().getEventPublisher(), DolphinContext.getCurrentContext().getEventMonitor());
     }
 
 }

@@ -213,11 +213,6 @@ public class DolphinContext {
         return id;
     }
 
-    @Deprecated
-    public static DolphinContext getCurrentContext() {
-        return DolphinContextHandler.getCurrentContext();
-    }
-
     public List<Command> handle(List<Command> commands) {
         List<Command> results = new LinkedList<>();
         for (Command command : commands) {

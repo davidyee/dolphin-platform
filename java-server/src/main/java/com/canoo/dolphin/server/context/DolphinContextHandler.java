@@ -18,14 +18,15 @@ package com.canoo.dolphin.server.context;
 import com.canoo.dolphin.impl.PlatformConstants;
 import com.canoo.dolphin.server.container.ContainerManager;
 import com.canoo.dolphin.server.controller.ControllerRepository;
-import com.canoo.dolphin.server.event.impl2.DolphinEventPublisher;
 import org.opendolphin.core.comm.Command;
 
-import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -36,38 +37,14 @@ public class DolphinContextHandler {
     private static final Lock globalContextMapLock = new ReentrantLock();
 
     private static final ThreadLocal<DolphinContext> currentContextThreadLocal = new ThreadLocal<>();
-    private static final ThreadLocal<String> sessionIdThreadLocal = new ThreadLocal<>();
 
     private final ContainerManager containerManager;
 
-    private final static DolphinContextHandler INSTANCE = new DolphinContextHandler();
-
     private ControllerRepository controllerRepository;
 
-    private DolphinEventPublisher eventPublisher;
-
-    private DolphinContextHandler() {
-        ServiceLoader<ContainerManager> serviceLoader = ServiceLoader.load(ContainerManager.class);
-        Iterator<ContainerManager> serviceIterator = serviceLoader.iterator();
-        if (serviceIterator.hasNext()) {
-            this.containerManager = serviceIterator.next();
-
-            if (serviceIterator.hasNext()) {
-                throw new RuntimeException("More than 1 " + ContainerManager.class + " found!");
-            }
-        } else {
-            throw new RuntimeException("No " + ContainerManager.class + " found!");
-        }
-        controllerRepository = new ControllerRepository();
-        eventPublisher = new DolphinEventPublisher();
-    }
-
-    public DolphinEventPublisher getEventPublisher() {
-        return eventPublisher;
-    }
-
-    public void init(ServletContext servletContext) {
-        this.containerManager.init(servletContext);
+    public DolphinContextHandler(ContainerManager containerManager, ControllerRepository controllerRepository) {
+        this.containerManager = containerManager;
+        this.controllerRepository = controllerRepository;
     }
 
     public void handle(HttpServletRequest request, HttpServletResponse response) {
@@ -91,8 +68,6 @@ public class DolphinContextHandler {
             globalContextMapLock.unlock();
         }
         currentContextThreadLocal.set(currentContext);
-        sessionIdThreadLocal.set(request.getSession().getId());
-
         try {
             response.setHeader(PlatformConstants.CLIENT_ID_HTTP_HEADER_NAME, currentContext.getId());
             response.setHeader("Content-Type", "application/json");
@@ -112,61 +87,14 @@ public class DolphinContextHandler {
             throw new RuntimeException("Error in Dolphin command handling", e);
         } finally {
             currentContextThreadLocal.remove();
-            sessionIdThreadLocal.remove();
         }
     }
 
-    /**
-     * Deprecated because of the client scope that will iontroduced in the next version
-     *
-     * @param session
-     * @return
-     */
-    public static List<DolphinContext> getContexts(HttpSession session) {
-        globalContextMapLock.lock();
-        try {
-            return globalContextMap.get(session.getId());
-        } finally {
-            globalContextMapLock.unlock();
-        }
+    public void removeAllContextsInSession(HttpSession session) {
+        throw new RuntimeException("NYI");
     }
 
-    public static DolphinContext getCurrentContext() {
+    public DolphinContext getCurrentContext() {
         return currentContextThreadLocal.get();
-    }
-
-    public static List<DolphinContext> getAllContexts() {
-        globalContextMapLock.lock();
-        try {
-            List<DolphinContext> ret = new ArrayList<>();
-            for (List<DolphinContext> sessionList : globalContextMap.values()) {
-                ret.addAll(sessionList);
-            }
-            return ret;
-        } finally {
-            globalContextMapLock.unlock();
-        }
-    }
-
-    public static List<DolphinContext> getAllContextsInSession() {
-        globalContextMapLock.lock();
-        try {
-            return globalContextMap.get(sessionIdThreadLocal.get());
-        } finally {
-            globalContextMapLock.unlock();
-        }
-    }
-
-    public static void removeAllContextsInSession(HttpSession session) {
-        globalContextMapLock.lock();
-        try {
-            globalContextMap.remove(session.getId());
-        } finally {
-            globalContextMapLock.unlock();
-        }
-    }
-
-    public static DolphinContextHandler getInstance() {
-        return INSTANCE;
     }
 }

@@ -15,14 +15,17 @@
  */
 package com.canoo.dolphin.server.servlet;
 
+import com.canoo.dolphin.server.container.ContainerManager;
 import com.canoo.dolphin.server.context.DolphinContextCleaner;
 import com.canoo.dolphin.server.context.DolphinContextHandler;
-import com.canoo.dolphin.server.event.impl.DolphinSessionHandlerCleaner;
+import com.canoo.dolphin.server.controller.ControllerRepository;
 import org.opendolphin.server.adapter.InvalidationServlet;
 
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
 import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.ServiceLoader;
 
 public class DolphinPlatformBootstrap {
 
@@ -46,14 +49,28 @@ public class DolphinPlatformBootstrap {
     }
 
     public void onStartup(ServletContext servletContext) {
-        servletContext.addServlet(DOLPHIN_SERVLET_NAME, new DolphinPlatformServlet()).addMapping(dolphinServletMapping);
+        ContainerManager containerManager = null;
+        ServiceLoader<ContainerManager> serviceLoader = ServiceLoader.load(ContainerManager.class);
+        Iterator<ContainerManager> serviceIterator = serviceLoader.iterator();
+        if (serviceIterator.hasNext()) {
+            containerManager = serviceIterator.next();
+            if (serviceIterator.hasNext()) {
+                throw new RuntimeException("More than 1 " + ContainerManager.class + " found!");
+            }
+        } else {
+            throw new RuntimeException("No " + ContainerManager.class + " found!");
+        }
+        containerManager.init(servletContext);
+
+        ControllerRepository controllerRepository = new ControllerRepository();
+
+        DolphinContextHandler dolphinContextHandler = new DolphinContextHandler(containerManager, controllerRepository);
+
+        servletContext.addServlet(DOLPHIN_SERVLET_NAME, new DolphinPlatformServlet(dolphinContextHandler)).addMapping(dolphinServletMapping);
         servletContext.addServlet(DOLPHIN_INVALIDATION_SERVLET_NAME, new InvalidationServlet()).addMapping(dolphinInvalidationServletMapping);
         servletContext.addFilter(DOLPHIN_CROSS_SITE_FILTER_NAME, new CrossSiteOriginFilter()).addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
 
-        servletContext.addListener(new DolphinContextCleaner());
-        servletContext.addListener(new DolphinSessionHandlerCleaner());
-
-        DolphinContextHandler.getInstance().init(servletContext);
+        servletContext.addListener(new DolphinContextCleaner(dolphinContextHandler));
     }
 
 }
