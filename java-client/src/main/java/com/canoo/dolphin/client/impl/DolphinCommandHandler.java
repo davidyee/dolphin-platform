@@ -42,10 +42,6 @@ public class DolphinCommandHandler {
                 result.complete(null);
             }
 
-            @Override
-            public void onFinishedData(List<Map> data) {
-                //Unused....
-            }
         });
         return result;
     }

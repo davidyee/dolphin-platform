@@ -26,7 +26,6 @@ import org.opendolphin.core.client.ClientPresentationModel;
 import org.opendolphin.core.client.comm.OnFinishedHandler;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 public class ControllerProxyImpl<T> implements ControllerProxy<T> {
@@ -87,10 +86,6 @@ public class ControllerProxyImpl<T> implements ControllerProxy<T> {
                 bean.unregister();
             }
 
-            @Override
-            public void onFinishedData(List<Map> data) {
-                //Unused....
-            }
         });
         return result;
     }
@@ -114,10 +109,6 @@ public class ControllerProxyImpl<T> implements ControllerProxy<T> {
                 ret.complete(null);
             }
 
-            @Override
-            public void onFinishedData(List<Map> data) {
-                //Unused....
-            }
         });
         return ret;
     }
