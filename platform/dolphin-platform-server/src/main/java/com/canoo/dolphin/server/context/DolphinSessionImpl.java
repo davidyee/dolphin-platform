@@ -49,26 +49,41 @@ public class DolphinSessionImpl implements DolphinSession {
 
     @Override
     public void setAttribute(String name, Object value) {
+        if(!isCurrentSession()) {
+            throw new DolphinContextException("Can't be called outside of the Dolphin Platform context");
+        }
         store.put(name, value);
     }
 
     @Override
     public Object getAttribute(String name) {
+        if(!isCurrentSession()) {
+            throw new DolphinContextException("Can't be called outside of the Dolphin Platform context");
+        }
         return store.get(name);
     }
 
     @Override
     public void removeAttribute(String name) {
+        if(!isCurrentSession()) {
+            throw new DolphinContextException("Can't be called outside of the Dolphin Platform context");
+        }
         store.remove(name);
     }
 
     @Override
     public Set<String> getAttributeNames() {
+        if(!isCurrentSession()) {
+            throw new DolphinContextException("Can't be called outside of the Dolphin Platform context");
+        }
         return Collections.unmodifiableSet(store.keySet());
     }
 
     @Override
     public void invalidate() {
+        if(!isCurrentSession()) {
+            throw new DolphinContextException("Can't be called outside of the Dolphin Platform context");
+        }
         store.clear();
     }
 
@@ -93,7 +108,7 @@ public class DolphinSessionImpl implements DolphinSession {
     public <V> Future<V> runLater(final Callable<V> callable) {
         Assert.requireNonNull(callable, "callable");
         if(isCurrentSession()) {
-            throw new DolphinCommandException("runLater / runAndWait can't be called from the same Dolphin Platform context since this can end in a deadlock!");
+            throw new DolphinContextException("runLater / runAndWait can't be called from the same Dolphin Platform context since this can end in a deadlock!");
         }
         return dolphinSessionRunner.runLater(callable);
     }

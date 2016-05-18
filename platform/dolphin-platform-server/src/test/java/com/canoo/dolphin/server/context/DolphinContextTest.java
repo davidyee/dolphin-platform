@@ -16,7 +16,7 @@
 package com.canoo.dolphin.server.context;
 
 import com.canoo.dolphin.impl.PlatformConstants;
-import com.canoo.dolphin.server.config.DolphinPlatformConfiguration;
+import com.canoo.dolphin.server.DolphinSession;
 import com.canoo.dolphin.server.container.ContainerManager;
 import com.canoo.dolphin.server.container.ModelInjector;
 import com.canoo.dolphin.server.controller.ControllerRepository;
@@ -144,7 +144,15 @@ public class DolphinContextTest {
     }
 
     private DolphinContext createContext() {
-        return new DolphinContext(new ContainerManagerMock(), new ControllerRepository(), new DefaultOpenDolphinFactory(), new DolphinEventBusImplMock(), new DestroyCallbackMock(), new DestroyCallbackMock());
+        return new DolphinContext(new ContainerManagerMock(), new ControllerRepository(), new DefaultOpenDolphinFactory(), new DolphinEventBusImplMock(), new DestroyCallbackMock(), new DestroyCallbackMock(), new DolphinSessionProviderMock());
+    }
+
+    private class DolphinSessionProviderMock implements DolphinSessionProvider {
+
+        @Override
+        public DolphinSession getCurrentDolphinSession() {
+            return null;
+        }
     }
 
     private class DestroyCallbackMock implements Callback<DolphinContext> {
