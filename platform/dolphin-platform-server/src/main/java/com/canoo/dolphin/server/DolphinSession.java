@@ -15,7 +15,10 @@
  */
 package com.canoo.dolphin.server;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 
 /**
  * Defines a Dolphin Platform Session. For each client (each client context instance) one {@link DolphinSession}
@@ -61,4 +64,12 @@ public interface DolphinSession {
      * @return the id
      */
     String getId();
+
+    Future<Void> runLater(Runnable r);
+
+    <V> Future<V> runLater(Callable<V> c);
+
+    void runAndWait(Runnable r) throws InvocationTargetException, InterruptedException;
+
+    <V> V runAndWait(Callable<V> c) throws InvocationTargetException, InterruptedException;
 }

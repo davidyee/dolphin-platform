@@ -40,8 +40,8 @@ import com.canoo.dolphin.server.impl.ServerControllerActionCallBean;
 import com.canoo.dolphin.server.impl.ServerEventDispatcher;
 import com.canoo.dolphin.server.impl.ServerPlatformBeanRepository;
 import com.canoo.dolphin.server.impl.ServerPresentationModelBuilderFactory;
-import com.canoo.dolphin.server.impl.gc.GarbageCollector;
 import com.canoo.dolphin.server.impl.gc.GarbageCollectionCallback;
+import com.canoo.dolphin.server.impl.gc.GarbageCollector;
 import com.canoo.dolphin.server.impl.gc.Instance;
 import com.canoo.dolphin.server.mbean.DolphinContextMBeanRegistry;
 import com.canoo.dolphin.util.Assert;
@@ -55,10 +55,16 @@ import org.opendolphin.core.server.comm.CommandHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * This class defines the central entry point for a Dolphin Platform session on the server.
@@ -98,7 +104,11 @@ public class DolphinContext implements DolphinSessionProvider {
 
     private final GarbageCollector garbageCollector;
 
-    public DolphinContext(ContainerManager containerManager, ControllerRepository controllerRepository, OpenDolphinFactory dolphinFactory, DolphinEventBusImpl dolphinEventBus, Callback<DolphinContext> preDestroyCallback, Callback<DolphinContext> onDestroyCallback) {
+    private final IdentityHashMap<Callable, CompletableFuture> runLaterTasks = new IdentityHashMap<>();
+
+    private final Lock runLaterTasksLock = new ReentrantLock();
+
+    public DolphinContext(ContainerManager containerManager, ControllerRepository controllerRepository, OpenDolphinFactory dolphinFactory, DolphinEventBusImpl dolphinEventBus, Callback<DolphinContext> preDestroyCallback, Callback<DolphinContext> onDestroyCallback, DolphinSessionProvider dolphinSessionProvider) {
         Assert.requireNonNull(containerManager, "containerManager");
         Assert.requireNonNull(controllerRepository, "controllerRepository");
         Assert.requireNonNull(dolphinFactory, "dolphinFactory");
@@ -140,7 +150,19 @@ public class DolphinContext implements DolphinSessionProvider {
         //Init ControllerHandler
         controllerHandler = new ControllerHandler(mBeanRegistry, containerManager, beanBuilder, beanRepository, controllerRepository);
 
-        dolphinSession = new DolphinSessionImpl(id);
+        dolphinSession = new DolphinSessionImpl(id, dolphinSessionProvider, new DolphinSessionRunner() {
+            @Override
+            public <V> Future<V> runLater(Callable<V> callable) {
+                runLaterTasksLock.lock();
+                try {
+                    CompletableFuture<V> completableFuture = new CompletableFuture<>();
+                    runLaterTasks.put(callable, completableFuture);
+                    return completableFuture;
+                } finally {
+                    runLaterTasksLock.unlock();
+                }
+            }
+        });
 
         //Register commands
         registerDolphinPlatformDefaultCommands();
@@ -209,6 +231,13 @@ public class DolphinContext implements DolphinSessionProvider {
                     }
                 });
 
+                registry.register(PlatformConstants.RUN_LATER_COMMAND_NAME, new CommandHandler() {
+                    @Override
+                    public void handleCommand(Command command, List response) {
+                        onRunLater();
+                    }
+                });
+
             }
         });
     }
@@ -235,6 +264,24 @@ public class DolphinContext implements DolphinSessionProvider {
         }
 
         onDestroyCallback.call(this);
+    }
+
+    private void onRunLater() {
+        runLaterTasksLock.lock();
+        try {
+            for(Callable c : runLaterTasks.keySet()) {
+                CompletableFuture completableFuture = runLaterTasks.get(c);
+                try {
+                    Object result = c.call();
+                    completableFuture.complete(result);
+                } catch (Exception e) {
+                    completableFuture.completeExceptionally(e);
+                }
+            }
+            runLaterTasks.clear();
+        } finally {
+            runLaterTasksLock.unlock();
+        }
     }
 
     private void onRegisterController() {
@@ -300,6 +347,9 @@ public class DolphinContext implements DolphinSessionProvider {
             results.addAll(dolphin.getServerConnector().receive(command));
         }
 
+        NamedCommand runLaterCollectionCommand = new NamedCommand(PlatformConstants.RUN_LATER_COMMAND_NAME);
+        results.addAll(dolphin.getServerConnector().receive(runLaterCollectionCommand));
+
         NamedCommand garbageCollectionCommand = new NamedCommand(PlatformConstants.GARBAGE_COLLECTION_COMMAND_NAME);
         results.addAll(dolphin.getServerConnector().receive(garbageCollectionCommand));
 
@@ -314,7 +364,6 @@ public class DolphinContext implements DolphinSessionProvider {
         DolphinContext that = (DolphinContext) o;
 
         return id.equals(that.id);
-
     }
 
     @Override

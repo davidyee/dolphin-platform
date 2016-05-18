@@ -103,7 +103,7 @@ public class DolphinContextHandler implements DolphinContextProvider {
                 };
 
 
-                currentContext = new DolphinContext(containerManager, controllerRepository, openDolphinFactory, DolphinPlatformBootstrap.getInstance().getDolphinEventBus(), preDestroyCallback, onDestroyCallback);
+                currentContext = new DolphinContext(containerManager, controllerRepository, openDolphinFactory, DolphinPlatformBootstrap.getInstance().getDolphinEventBus(), preDestroyCallback, onDestroyCallback, this);
                 ArrayList list = new ArrayList();
                 list.add(currentContext);
                 httpSession.setAttribute(DOLPHIN_CONTEXT_MAP, list);

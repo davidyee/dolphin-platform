@@ -16,11 +16,16 @@
 package com.canoo.dolphin.server.context;
 
 import com.canoo.dolphin.server.DolphinSession;
+import com.canoo.dolphin.util.Assert;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * Default implementation of {@link DolphinSession} that uses a map internally to store all attributes
@@ -31,8 +36,14 @@ public class DolphinSessionImpl implements DolphinSession {
 
     private final String dolphinSessionId;
 
-    public DolphinSessionImpl(String dolphinSessionId) {
-        this.dolphinSessionId = dolphinSessionId;
+    private final DolphinSessionProvider dolphinSessionProvider;
+
+    private final DolphinSessionRunner dolphinSessionRunner;
+
+    public DolphinSessionImpl(String dolphinSessionId, DolphinSessionProvider dolphinSessionProvider, DolphinSessionRunner dolphinSessionRunner) {
+        this.dolphinSessionId = Assert.requireNonBlank(dolphinSessionId, "dolphinSessionId");
+        this.dolphinSessionProvider = Assert.requireNonNull(dolphinSessionProvider, "dolphinSessionProvider");
+        this.dolphinSessionRunner = Assert.requireNonNull(dolphinSessionRunner, "dolphinSessionRunner");
         this.store = new ConcurrentHashMap<>();
     }
 
@@ -64,5 +75,74 @@ public class DolphinSessionImpl implements DolphinSession {
     @Override
     public String getId() {
         return dolphinSessionId;
+    }
+
+    @Override
+    public Future<Void> runLater(final Runnable runnable) {
+        Assert.requireNonNull(runnable, "runnable");
+        return runLater(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                runnable.run();
+                return null;
+            }
+        });
+    }
+
+    @Override
+    public <V> Future<V> runLater(final Callable<V> callable) {
+        Assert.requireNonNull(callable, "callable");
+        if(isCurrentSession()) {
+            throw new DolphinCommandException("runLater / runAndWait can't be called from the same Dolphin Platform context since this can end in a deadlock!");
+        }
+        return dolphinSessionRunner.runLater(callable);
+    }
+
+    @Override
+    public void runAndWait(final Runnable runnable)  throws InvocationTargetException, InterruptedException {
+        Assert.requireNonNull(runnable, "runnable");
+        runAndWait(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                runnable.run();
+                return null;
+            }
+        });
+    }
+
+    @Override
+    public <V> V runAndWait(final Callable<V> callable)  throws InvocationTargetException, InterruptedException {
+        Assert.requireNonNull(callable, "callable");
+        try {
+            return runLater(callable).get();
+        } catch (InterruptedException e) {
+            throw e;
+        } catch (ExecutionException e) {
+            throw new InvocationTargetException(e);
+        }
+    }
+
+    public boolean isCurrentSession() {
+        DolphinSession currentSession = dolphinSessionProvider.getCurrentDolphinSession();
+        if(currentSession != null && currentSession.equals(this)) {
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        DolphinSessionImpl that = (DolphinSessionImpl) o;
+
+        return dolphinSessionId.equals(that.dolphinSessionId);
+
+    }
+
+    @Override
+    public int hashCode() {
+        return dolphinSessionId.hashCode();
     }
 }

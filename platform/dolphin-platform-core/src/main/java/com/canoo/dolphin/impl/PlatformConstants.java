@@ -37,6 +37,8 @@ public interface PlatformConstants {
 
     String GARBAGE_COLLECTION_COMMAND_NAME = DOLPHIN_PLATFORM_PREFIX + "garbageCollection";
 
+    String RUN_LATER_COMMAND_NAME = DOLPHIN_PLATFORM_PREFIX + "runLater";
+
     String DOLPHIN_BEAN = "@@@ DOLPHIN_BEAN @@@";
 
     String SOURCE_SYSTEM = "@@@ SOURCE_SYSTEM @@@";
