@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.opendolphin.core.client.comm
+package org.opendolphin.core.client.comm;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * interface for data point handler
