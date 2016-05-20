@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.opendolphin.core.client
+package org.opendolphin.core.client;
 
-import groovy.transform.CompileStatic
-import org.opendolphin.core.BaseAttribute
-import org.opendolphin.core.Tag
+import org.opendolphin.core.BaseAttribute;
+import org.opendolphin.core.Tag;
+
+import java.util.Map;
 
 /**
  * A client side (remote) ClientAttribute is considered a remote representation of a ServerAttribute.
@@ -27,24 +28,35 @@ import org.opendolphin.core.Tag
  * b) through the valueProperty() method for JavaFx
  */
 
-@CompileStatic
-class ClientAttribute extends BaseAttribute {
+public class ClientAttribute extends BaseAttribute {
 
     /** @deprecated you should not create Client Attributes without initial values */
-    ClientAttribute(String propertyName) {
-        this(propertyName, null)
+    @Deprecated
+    public ClientAttribute(String propertyName) {
+        this(propertyName, null);
     }
 
+    public ClientAttribute(String propertyName, Object initialValue) {
+        this(propertyName, initialValue, null, Tag.VALUE);
+    }
 
-    ClientAttribute(String propertyName, Object initialValue, String qualifier = null, Tag tag = Tag.VALUE) {
-        super(propertyName, initialValue, qualifier, tag)
+    public ClientAttribute(String propertyName, Object initialValue, String qualifier) {
+        this(propertyName, initialValue, qualifier, Tag.VALUE);
+    }
+
+    public ClientAttribute(String propertyName, Object initialValue, Tag tag) {
+        this(propertyName, initialValue, null, tag);
+    }
+
+    public ClientAttribute(String propertyName, Object initialValue, String qualifier, Tag tag) {
+        super(propertyName, initialValue, qualifier, tag);
     }
 
 
     /** @deprecated too much dependent on key names and doesn't allow setting the tag */
-    ClientAttribute(Map props) {
-        this(props.propertyName.toString(), props.initialValue)
-        this.qualifier = props.qualifier
+    @Deprecated
+    public ClientAttribute(Map props) {
+        this(props.get("propertyName").toString(), props.get("initialValue"), props.get("qualifier").toString(), Tag.VALUE);
     }
 
     public String getOrigin(){

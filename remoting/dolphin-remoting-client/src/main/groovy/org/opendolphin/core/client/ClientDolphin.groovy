@@ -107,7 +107,7 @@ public class ClientDolphin extends AbstractDolphin<ClientAttribute, ClientPresen
 
     /** start of a fluent api: apply source to target. Use for selection changes in master-detail views. */
     ApplyToAble apply(ClientPresentationModel source) {
-        new ApplyToAble(dolphin: this, source: source)
+        new ApplyToAble(this, source)
     }
 
    /** Removes the modelToDelete from the client model store,
@@ -202,12 +202,19 @@ public class ClientDolphin extends AbstractDolphin<ClientAttribute, ClientPresen
     }
 }
 
-class ApplyToAble {
-    ClientDolphin dolphin
-    ClientPresentationModel source
+public class ApplyToAble {
 
-    void to(ClientPresentationModel target) {
-        target.syncWith source
+    private final ClientDolphin dolphin;
+
+    private final ClientPresentationModel source;
+
+    ApplyToAble(ClientDolphin dolphin, ClientPresentationModel source) {
+        this.dolphin = dolphin
+        this.source = source
+    }
+
+    public void to(ClientPresentationModel target) {
+        target.syncWith(source);
         // at this point, all notifications about value and meta-inf changes
         // have been sent and that way the server is synchronized
     }
