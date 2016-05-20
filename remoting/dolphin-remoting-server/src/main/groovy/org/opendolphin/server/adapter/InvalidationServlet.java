@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.opendolphin.server.adapter
+package org.opendolphin.server.adapter;
 
-import javax.servlet.ServletException
-import javax.servlet.http.HttpServlet
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 public class InvalidationServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        if (req.requestURL.toString().contains("invalidate")) {
-            req.session.invalidate()
-            resp.writer.write("new session")
+        if (req.getRequestURL().toString().contains("invalidate")) {
+            req.getSession().invalidate();
+            resp.getWriter().write("new session");
         }
     }
 }
