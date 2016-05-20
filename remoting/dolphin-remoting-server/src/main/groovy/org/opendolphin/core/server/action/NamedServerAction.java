@@ -13,26 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.opendolphin.core.server.action
+package org.opendolphin.core.server.action;
 
-import org.opendolphin.core.server.comm.ActionRegistry
-import org.opendolphin.core.server.comm.NamedCommandHandler
+import org.opendolphin.core.server.comm.ActionRegistry;
+import org.opendolphin.core.server.comm.NamedCommandHandler;
 
 /**
  * Java-friendly action handling
  */
 
-class NamedServerAction extends DolphinServerAction {
-    final String name
-    final NamedCommandHandler namedCommandHandler
+public class NamedServerAction extends DolphinServerAction {
+    private final String name;
+    private final NamedCommandHandler namedCommandHandler;
 
-    NamedServerAction(String name, NamedCommandHandler namedCommandHandler) {
-        this.name = name
-        this.namedCommandHandler = namedCommandHandler
+    public NamedServerAction(String name, NamedCommandHandler namedCommandHandler) {
+        this.name = name;
+        this.namedCommandHandler = namedCommandHandler;
     }
 
     @Override
-    void registerIn(ActionRegistry registry) {
-        registry.register(name, namedCommandHandler)
+    public void registerIn(ActionRegistry registry) {
+        registry.register(name, namedCommandHandler);
     }
 }
