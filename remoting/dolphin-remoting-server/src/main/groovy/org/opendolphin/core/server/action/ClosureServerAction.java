@@ -13,26 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.opendolphin.core.server.action
+package org.opendolphin.core.server.action;
 
-import org.opendolphin.core.server.comm.ActionRegistry
+import groovy.lang.Closure;
+import org.opendolphin.core.server.comm.ActionRegistry;
 
 /**
  * Groovy-friendly action handling
  */
 
-class ClosureServerAction extends DolphinServerAction {
-    final String name
-    final Closure namedCommandHandler
+public class ClosureServerAction extends DolphinServerAction {
 
-    ClosureServerAction(String name, Closure namedCommandHandler) {
-        this.name = name
-        this.namedCommandHandler = namedCommandHandler
+    private final String name;
+
+    private final Closure namedCommandHandler;
+
+    public ClosureServerAction(String name, Closure namedCommandHandler) {
+        this.name = name;
+        this.namedCommandHandler = namedCommandHandler;
     }
 
     @Override
-    void registerIn(ActionRegistry registry) {
-        registry.register(name, namedCommandHandler)
+    public void registerIn(ActionRegistry registry) {
+        registry.register(name, namedCommandHandler);
     }
 
 }
