@@ -13,12 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.opendolphin.core.comm
+package org.opendolphin.core.comm;
+
+import java.util.List;
 
 public interface Codec {
 
-    String encode(List<Command> commands)
+    String encode(List<Command> commands);
 
-    List<Command> decode(String transmitted)
+    List<Command> decode(String transmitted);
 
 }

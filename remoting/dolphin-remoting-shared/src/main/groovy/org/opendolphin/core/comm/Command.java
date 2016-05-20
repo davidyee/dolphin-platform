@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.opendolphin.core.comm
+package org.opendolphin.core.comm;
 // todo dk: go through all subtypes and apply the new naming convention
 
 /**
@@ -27,14 +27,17 @@ package org.opendolphin.core.comm
  * The receiving side is responsible for finding the appropriate action.
  */
 
-//CompileStatic
-class Command {
+public class Command {
 
-    String getId() { idFor this.class }
-
-    static String idFor(Class commandClass) {
-        commandClass.name - commandClass.package.name - "." - "Command" - "Notification"
+    public String getId() {
+        return idFor(this.getClass());
     }
 
-    String toString() { "Command: $id" }
+    public static String idFor(Class commandClass) {
+        return commandClass.getName() + "-" + commandClass.getPackage().getName() + "-.-Command-Notification";
+    }
+
+    public String toString() {
+        return "Command: " + getId();
+    }
 }
