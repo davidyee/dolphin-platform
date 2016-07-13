@@ -40,6 +40,7 @@ import com.canoo.dolphin.internal.EventDispatcher;
 import com.canoo.dolphin.internal.collections.ListMapper;
 import com.canoo.dolphin.util.Assert;
 import com.canoo.dolphin.util.DolphinRemotingException;
+import org.apache.http.client.HttpClient;
 import org.opendolphin.core.client.ClientDolphin;
 import org.opendolphin.core.client.ClientModelStore;
 import org.opendolphin.core.client.comm.BlindCommandBatcher;
@@ -52,7 +53,7 @@ import java.util.logging.Logger;
 
 /**
  * Factory to create a {@link ClientContext}. Normally you will create a {@link ClientContext} at the bootstrap of your
- * client by using the {@link #connect(ClientConfiguration)} method and use this context as a singleton in your client.
+ * client by using the {@link #connect(ClientConfiguration, HttpClient)} method and use this context as a singleton in your client.
  * The {@link ClientContext} defines the connection between the client and the Dolphin Platform server endpoint.
  */
 public class ClientContextFactory {
@@ -68,7 +69,7 @@ public class ClientContextFactory {
      * @param clientConfiguration the configuration
      * @return the future
      */
-    public static CompletableFuture<ClientContext> connect(final ClientConfiguration clientConfiguration) {
+    public static CompletableFuture<ClientContext> connect(final ClientConfiguration clientConfiguration, final HttpClient httpClient) {
         Assert.requireNonNull(clientConfiguration, "clientConfiguration");
         final CompletableFuture<ClientContext> result = new CompletableFuture<>();
 
@@ -81,7 +82,7 @@ public class ClientContextFactory {
                 final ForwardableCallback<DolphinRemotingException> remotingErrorHandler = new ForwardableCallback<>();
                 final ClientDolphin clientDolphin = new ClientDolphin();
                 clientDolphin.setClientModelStore(new ClientModelStore(clientDolphin));
-                final ClientConnector clientConnector = new DolphinPlatformHttpClientConnector(clientDolphin, clientConfiguration.getHttpClient(), new BlindCommandBatcher(), clientConfiguration.getServerEndpoint(), remotingErrorHandler);
+                final ClientConnector clientConnector = new DolphinPlatformHttpClientConnector(clientDolphin, httpClient, new BlindCommandBatcher(), clientConfiguration.getServerEndpoint(), remotingErrorHandler);
                 clientConnector.setCodec(new OptimizedJsonCodec());
                 clientConnector.setUiThreadHandler(clientConfiguration.getUiThreadHandler());
                 clientDolphin.setClientConnector(clientConnector);
@@ -96,7 +97,7 @@ public class ClientContextFactory {
                 final ClientPlatformBeanRepository platformBeanRepository = new ClientPlatformBeanRepository(clientDolphin, beanRepository, dispatcher, converters);
                 final ClientBeanManagerImpl clientBeanManager = new ClientBeanManagerImpl(beanRepository, beanBuilder, clientDolphin);
                 final ControllerProxyFactory controllerProxyFactory = new ControllerProxyFactoryImpl(platformBeanRepository, dolphinCommandHandler, clientDolphin);
-                final ClientContext clientContext = new ClientContextImpl(clientConfiguration, clientDolphin, controllerProxyFactory, dolphinCommandHandler, platformBeanRepository, clientBeanManager, remotingErrorHandler);
+                final ClientContext clientContext = new ClientContextImpl(clientConfiguration, clientDolphin, httpClient, controllerProxyFactory, dolphinCommandHandler, platformBeanRepository, clientBeanManager, remotingErrorHandler);
                 clientDolphin.startPushListening(PlatformConstants.POLL_EVENT_BUS_COMMAND_NAME, PlatformConstants.RELEASE_EVENT_BUS_COMMAND_NAME);
                 clientConfiguration.getUiThreadHandler().executeInsideUiThread(() -> result.complete(clientContext));
             } catch (Exception e) {

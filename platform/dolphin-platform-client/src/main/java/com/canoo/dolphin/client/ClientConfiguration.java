@@ -17,8 +17,6 @@ package com.canoo.dolphin.client;
 
 import com.canoo.dolphin.util.Assert;
 import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.opendolphin.core.client.comm.UiThreadHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +25,7 @@ import java.util.logging.Level;
 
 /**
  * Configuration class for a Dolphin Platform client. A configuration is needed to create a {@link ClientContext} by
- * using the {@link ClientContextFactory} (see {@link ClientContextFactory#connect(ClientConfiguration)}).
+ * using the {@link ClientContextFactory} (see {@link ClientContextFactory#connect(ClientConfiguration, HttpClient httpClient)}).
  * The configuration wraps the url to the Dolphin Platform server endpoint and a specific ui thread handler.
  * Since Dolphin Platform manages UI releated concurrency for you it needs a handler to call methods directly on the
  * ui thread. For platforms like JavaFX the JavaFX client lib of Dolphin Platform contains a specific
@@ -47,7 +45,7 @@ public class ClientConfiguration {
 
     private long connectionTimeout;
 
-    private HttpClient httpClient;
+    private long disconnectTimeout = 1000;
 
     private final static Logger LOG = LoggerFactory.getLogger(ClientConfiguration.class);
 
@@ -63,7 +61,6 @@ public class ClientConfiguration {
         this.dolphinLogLevel = Level.SEVERE;
         this.connectionTimeout = DEFAULT_CONNECTION_TIMEOUT;
 
-        httpClient = new DefaultHttpClient(new PoolingClientConnectionManager());
     }
 
     /**
@@ -126,11 +123,11 @@ public class ClientConfiguration {
         }
     }
 
-    public HttpClient getHttpClient() {
-        return httpClient;
+    public long getDisconnectTimeout() {
+        return disconnectTimeout;
     }
 
-    public void setHttpClient(HttpClient httpClient) {
-        this.httpClient =  Assert.requireNonNull(httpClient, "httpClient");
+    public void setDisconnectTimeout(long disconnectTimeout) {
+        this.disconnectTimeout = disconnectTimeout;
     }
 }

@@ -105,7 +105,7 @@ public class ControllerHandler {
             }
         }));
 
-        LOG.trace("Created Controller of type %s and id %s for name %s", controllerClass.getName(), id, name);
+        LOG.trace("Created Controller of type {} and id {} for name {}", controllerClass.getName(), id, name);
 
         return id;
     }

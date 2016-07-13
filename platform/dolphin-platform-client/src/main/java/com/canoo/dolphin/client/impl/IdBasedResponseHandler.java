@@ -10,6 +10,8 @@ import org.apache.http.StatusLine;
 import org.apache.http.client.HttpResponseException;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.util.EntityUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -17,6 +19,9 @@ import java.io.IOException;
  * Created by hendrikebbers on 03.06.16.
  */
 public class IdBasedResponseHandler implements ResponseHandler<String> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(IdBasedResponseHandler.class);
+
 
     private final DolphinPlatformHttpClientConnector clientConnector;
 
@@ -44,6 +49,7 @@ public class IdBasedResponseHandler implements ResponseHandler<String> {
 
         try {
             final Header dolphinHeader = response.getFirstHeader(PlatformConstants.CLIENT_ID_HTTP_HEADER_NAME);
+            LOG.trace("Received response with client ID {}", dolphinHeader.getValue());
             clientConnector.setClientId(dolphinHeader.getValue());
         } catch (Exception e) {
             throw new DolphinSessionException("Error in handling Dolphin Client ID", e);

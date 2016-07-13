@@ -19,14 +19,20 @@ import com.canoo.dolphin.client.ClientContext;
 import com.canoo.dolphin.client.ClientInitializationException;
 import com.canoo.dolphin.client.DolphinSessionException;
 import com.canoo.dolphin.client.javafx.DolphinPlatformApplication;
+import com.canoo.dolphin.event.Subscription;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Priority;
 import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.stage.Window;
 import org.apache.http.client.HttpResponseException;
 
 import java.io.PrintWriter;
@@ -36,6 +42,8 @@ import java.util.logging.Logger;
 
 public class ToDoClient extends DolphinPlatformApplication {
 
+    Subscription errorSubscription;
+
     @Override
     protected String getServerEndpoint() {
         return "http://localhost:8080/todo-app/dolphin";
@@ -43,13 +51,16 @@ public class ToDoClient extends DolphinPlatformApplication {
 
     @Override
     protected void start(Stage primaryStage, ClientContext clientContext) throws Exception {
-        clientContext.onRemotingError(e -> {
-            if(e.getCause() != null && e.getCause() instanceof DolphinSessionException) {
-                showError("A remoting error happened", "Looks like we ended in a session timeout :(", e);
-            } else if(e.getCause() != null && e.getCause() instanceof HttpResponseException) {
-                showError("A remoting error happened", "Looks like the server sended a bad response :(", e);
+        errorSubscription = clientContext.onRemotingError(e -> {
+            if(errorSubscription != null) {
+                errorSubscription.unsubscribe();
+            }
+            if (e.getCause() != null && e.getCause() instanceof DolphinSessionException) {
+                showError(primaryStage, "A remoting error happened", "Looks like we ended in a session timeout :(", e);
+            } else if (e.getCause() != null && e.getCause() instanceof HttpResponseException) {
+                showError(primaryStage, "A remoting error happened", "Looks like the server sended a bad response :(", e);
             } else {
-                showError("A remoting error happened", "Looks like we have a big problem :(", e);
+                showError(primaryStage, "A remoting error happened", "Looks like we have a big problem :(", e);
             }
         });
 
@@ -58,7 +69,7 @@ public class ToDoClient extends DolphinPlatformApplication {
         primaryStage.show();
     }
 
-    private void showError(String header, String content, Exception e) {
+    private void showError(Window parent, String header, String content, Throwable e) {
         e.printStackTrace();
 
         Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -88,13 +99,52 @@ public class ToDoClient extends DolphinPlatformApplication {
         expContent.add(textArea, 0, 1);
 
         alert.getDialogPane().setExpandableContent(expContent);
-        alert.showAndWait();
-        System.exit(-1);
+
+        ButtonType reconnect = new ButtonType("reconnect");
+        alert.getButtonTypes().add(reconnect);
+
+        ButtonType buttonType = alert.showAndWait().orElse(null);
+        if (buttonType.equals(reconnect)) {
+            Stage reconnectWindow = new Stage(StageStyle.UNDECORATED);
+            ProgressIndicator progressIndicator = new ProgressIndicator();
+            reconnectWindow.setScene(new Scene(progressIndicator));
+            reconnectWindow.show();
+
+            reconnect().whenComplete((c, ex) -> {
+                if (ex != null) {
+                    Platform.runLater(() -> {
+                        showError(parent, "Error in reconnect", "Error in reconnect", ex);
+                        reconnectWindow.close();
+                    });
+                } else {
+                    if (c == null) {
+                        Platform.runLater(() -> {
+                            showError(parent, "Error in reconnect", "Error in reconnect", new NullPointerException());
+                            reconnectWindow.close();
+                        });
+                    } else {
+                        Platform.runLater(() -> {
+                            try {
+                                start(new Stage(), c);
+                                reconnectWindow.close();
+                            } catch (Exception e1) {
+                                e1.printStackTrace();
+                            }
+                        });
+                    }
+                }
+            });
+        } else {
+            System.exit(-1);
+        }
+        if(parent != null && parent.isShowing()) {
+            parent.hide();
+        }
     }
 
     @Override
-    protected void onInitializationError(Stage primaryStage, ClientInitializationException initializationException) throws Exception {
-        showError("Error on initialization", "A error happened while initializing the Client and Connection", initializationException);
+    protected void onInitializationError(Stage primaryStage, ClientInitializationException initializationException) {
+        showError(primaryStage, "Error on initialization", "A error happened while initializing the Client and Connection", initializationException);
     }
 
     public static void main(String[] args) {

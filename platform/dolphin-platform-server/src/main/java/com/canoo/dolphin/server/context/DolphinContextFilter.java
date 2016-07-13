@@ -48,10 +48,11 @@ public class DolphinContextFilter implements Filter {
         try {
             DolphinContext dolphinContext;
             final String clientId = servletRequest.getHeader(PlatformConstants.CLIENT_ID_HTTP_HEADER_NAME);
+            LOG.trace("Incoming request for client {} in session {}", clientId, httpSession.getId());
             if (clientId == null || clientId.trim().isEmpty()) {
                 if(DolphinContextUtils.getOrCreateContextMapInSession(httpSession).size() >= configuration.getMaxClientsPerSession()) {
                     servletResponse.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, "Maximum size for clients in session is reached");
-                    LOG.info("Maximum size for clients in session " + servletRequest.getSession().getId() +" is reached");
+                    LOG.info("Maximum size for clients in session {} is reached", servletRequest.getSession().getId());
                     return;
                 }
                 dolphinContext = createNewContext(httpSession);

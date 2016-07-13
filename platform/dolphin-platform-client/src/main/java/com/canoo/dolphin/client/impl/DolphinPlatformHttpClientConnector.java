@@ -25,6 +25,8 @@ import org.opendolphin.core.client.ClientDolphin;
 import org.opendolphin.core.client.comm.ClientConnector;
 import org.opendolphin.core.client.comm.CommandBatcher;
 import org.opendolphin.core.comm.Command;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +35,8 @@ import java.util.List;
  * This class is used to sync the unique client scope id of the current dolphin
  */
 public class DolphinPlatformHttpClientConnector extends ClientConnector {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DolphinPlatformHttpClientConnector.class);
 
     private static final String CHARSET = "UTF-8";
 
@@ -65,7 +69,10 @@ public class DolphinPlatformHttpClientConnector extends ClientConnector {
             StringEntity entity = new StringEntity(content, CHARSET);
             httpPost.setEntity(entity);
             if(clientId != null) {
+                LOG.trace("Adding client ID to request: {}", clientId);
                 httpPost.addHeader(PlatformConstants.CLIENT_ID_HTTP_HEADER_NAME, clientId);
+            } else {
+                LOG.trace("Adding no client ID to request");
             }
             if (commands.size() == 1 && commands.get(0) == getReleaseCommand()) {
                 httpClient.execute(httpPost, responseHandler);
@@ -89,6 +96,7 @@ public class DolphinPlatformHttpClientConnector extends ClientConnector {
         if (this.clientId != null && !this.clientId.equals(clientId)) {
             throw new DolphinRemotingException("Error: client id conflict!");
         }
+        LOG.trace("Defined client ID as {}", clientId);
         this.clientId = clientId;
     }
 }
