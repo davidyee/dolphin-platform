@@ -1,38 +1,15 @@
 apply plugin: 'com.bmuschko.docker-remote-api'
 
-import com.bmuschko.gradle.docker.tasks.container.*
-import com.bmuschko.gradle.docker.tasks.image.*
-
 task buildJavaImage (type : Exec) {
     commandLine "docker", "build", "-t", "dolphin-platform-integration-tests/java", "docker-base/java"
 }
 
-task buildPayaraImage(type: DockerBuildImage) {
+task buildPayaraImage(type: Exec) {
     dependsOn buildJavaImage
     commandLine "docker", "build", "-t", "dolphin-platform-integration-tests/payara", "docker-base/payara"
 }
 
-task buildPayaraConfiguredImage(type: DockerBuildImage) {
+task buildPayaraConfiguredImage(type: Exec) {
     dependsOn buildPayaraImage
     commandLine "docker", "build", "-t", "dolphin-platform-integration-tests/payara-configured", "docker-base/payara-configured"
-}
-
-task createMyAppContainer(type: DockerCreateContainer) {
-    dependsOn buildPayaraConfiguredImage
-    targetImageId { buildMyAppImage.getImageId() }
-    portBindings = ['8080:8080']
-}
-
-task startMyAppContainer(type: DockerStartContainer) {
-    dependsOn createMyAppContainer
-    targetContainerId { createMyAppContainer.getContainerId() }
-}
-
-task stopMyAppContainer(type: DockerStopContainer) {
-    targetContainerId { createMyAppContainer.getContainerId() }
-}
-
-task functionalTestMyApp(type: Test) {
-    dependsOn startMyAppContainer
-    finalizedBy stopMyAppContainer
 }
