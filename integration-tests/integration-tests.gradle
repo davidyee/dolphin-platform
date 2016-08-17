@@ -1,13 +1,13 @@
 task buildJavaImage (type : Exec) {
-    commandLine "docker", "build", "-t", "dolphin-platform-integration-tests/java", "docker-base/java"
+    commandLine "docker", "build", "-t", "airhacks/java", "docker-base/java"
 }
 
 task buildPayaraImage(type: Exec) {
     dependsOn buildJavaImage
-    commandLine "docker", "build", "-t", "dolphin-platform-integration-tests/payara", "docker-base/payara"
+    commandLine "docker", "build", "-t", "airhacks/payara", "docker-base/payara"
 }
 
 task buildPayaraConfiguredImage(type: Exec) {
     dependsOn buildPayaraImage
-    commandLine "docker", "build", "-t", "dolphin-platform-integration-tests/payara-configured", "docker-base/payara-configured"
+    commandLine "docker", "build", "-t", "airhacks/payara-configured", "docker-base/payara-configured"
 }
