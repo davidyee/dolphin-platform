@@ -1,4 +1,3 @@
-
 //Base Java Image
 
 task buildJavaImage (type : Exec) {
@@ -17,9 +16,12 @@ task buildPayaraConfiguredImage(type: Exec) {
     commandLine "docker", "build", "-t", "airhacks/payara-configured", "docker-base/payara-configured"
 }
 
+task copyWarForPayaraIntegrationImage(type: Exec) {
+    commandLine "cp", "../platform-examples/todo-example/todo-server-javaee/build/libs/todo-app.war", "docker-base/payara-integration"
+}
+
 task buildPayaraIntegrationImage(type: Exec) {
-    dependsOn buildPayaraConfiguredImage
-    commandLine "cp", "../../../platform-examples/todo-example/todo-server-javaee/build/libs/todo-app.war", "."
+    dependsOn copyWarForPayaraIntegrationImage, buildPayaraConfiguredImage
     commandLine "docker", "build", "-t", "dolphin-platform/paraya-integration", "docker-base/payara-integration"
 }
 
@@ -43,8 +45,12 @@ task buildWildflyImage(type: Exec) {
     commandLine "docker", "build", "-t", "airhacks/wildfly", "docker-base/wildfly"
 }
 
+task copyWarForWildflyIntegrationImage(type: Exec) {
+    commandLine "cp", "../platform-examples/todo-example/todo-server-javaee/build/libs/todo-app.war", "docker-base/wildfly-integration"
+}
+
 task buildWildflyIntegrationImage(type: Exec) {
-    dependsOn buildWildflyImage
+    dependsOn copyWarForWildflyIntegrationImage, buildWildflyImage
     commandLine "docker", "build", "-t", "dolphin-platform/wildfly-integration", "docker-base/wildfly-integration"
 }
 
