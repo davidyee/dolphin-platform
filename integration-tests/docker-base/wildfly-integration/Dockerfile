@@ -1,3 +1,3 @@
 FROM airhacks/wildfly
-MAINTAINER Adam Bien, adam-bien.com
-COPY ping.war ${DEPLOYMENT_DIR}
+MAINTAINER Hendrik Ebbers, canoo.com
+COPY ../../../platform-examples/todo-example/todo-server-javaee/build/libs/todo-app.war ${DEPLOYMENT_DIR}
