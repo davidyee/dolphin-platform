@@ -19,7 +19,7 @@ task buildPayaraConfiguredImage(type: Exec) {
 
 task buildPayaraIntegrationImage(type: Exec) {
     dependsOn buildPayaraConfiguredImage
-    commandLine "docker", "build", "-t", "dolphin-platform/paraya-integration", "docker-base/wildfly-integration"
+    commandLine "docker", "build", "-t", "dolphin-platform/paraya-integration", "docker-base/payara-integration"
 }
 
 
