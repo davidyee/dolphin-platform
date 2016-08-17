@@ -1,6 +1,11 @@
+
+//Base Java Image
+
 task buildJavaImage (type : Exec) {
     commandLine "docker", "build", "-t", "airhacks/java", "docker-base/java"
 }
+
+// Base Paraya Images
 
 task buildPayaraImage(type: Exec) {
     dependsOn buildJavaImage
@@ -10,4 +15,28 @@ task buildPayaraImage(type: Exec) {
 task buildPayaraConfiguredImage(type: Exec) {
     dependsOn buildPayaraImage
     commandLine "docker", "build", "-t", "airhacks/payara-configured", "docker-base/payara-configured"
+}
+
+// Base TomEE Image
+
+task buildTomEEImage(type: Exec) {
+    dependsOn buildJavaImage
+    commandLine "docker", "build", "-t", "airhacks/tomee", "docker-base/tomee"
+}
+
+// Base Wildfly Image
+
+task buildWildflyImage(type: Exec) {
+    dependsOn buildJavaImage
+    commandLine "docker", "build", "-t", "airhacks/wildfly", "docker-base/wildfly"
+}
+
+task buildWildflyIntegrationImage(type: Exec) {
+    dependsOn buildWildflyImage
+    commandLine "docker", "build", "-t", "dolphin-platform/wildfly-integration", "docker-base/wildfly-integration"
+}
+
+task runWildflyIntegrationImage(type: Exec) {
+    dependsOn buildWildflyIntegrationImage
+    commandLine "docker", "run", "-t", "-p", "8282:8080", "--name", "wildfly-integration", "dolphin-platform/wildfly-integration"
 }
