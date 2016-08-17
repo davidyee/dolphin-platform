@@ -19,13 +19,13 @@ task buildPayaraConfiguredImage(type: Exec) {
 
 task buildPayaraIntegrationImage(type: Exec) {
     dependsOn buildPayaraConfiguredImage
+    commandLine "cp", "../../../platform-examples/todo-example/todo-server-javaee/build/libs/todo-app.war", "paraya-integration/todo-app.war"
     commandLine "docker", "build", "-t", "dolphin-platform/paraya-integration", "docker-base/payara-integration"
 }
 
 
 task runPayaraIntegrationImage(type: Exec) {
     dependsOn buildPayaraIntegrationImage
-    commandLine "cp", "../../../platform-examples/todo-example/todo-server-javaee/build/libs/todo-app.war", "paraya-integration/todo-app.war"
     commandLine "docker", "run", "-t", "-p", "8282:8080", "--name", "paraya-integration", "dolphin-platform/paraya-integration"
 }
 
