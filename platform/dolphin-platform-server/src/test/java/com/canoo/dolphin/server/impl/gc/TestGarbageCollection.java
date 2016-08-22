@@ -277,7 +277,22 @@ public class TestGarbageCollection {
 
     }
 
-    @Test
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    public void removeUnmanagedBean() {
+        final List<Object> removedObjects = new ArrayList<>();
+        GarbageCollectionCallback gcConsumer = new GarbageCollectionCallback() {
+            @Override
+            public void onReject(Set<Instance> instances) {
+                for (Instance instance : instances) {
+                    removedObjects.add(instance.getBean());
+                }
+            }
+        };
+        GarbageCollector garbageCollector = createGarbageCollection(gcConsumer);
+        garbageCollector.onBeanRemoved("Unmanaged Bean");
+    }
+
+        @Test
     public void testForBeanList() {
         final List<Object> removedObjects = new ArrayList<>();
         GarbageCollectionCallback gcConsumer = new GarbageCollectionCallback() {
@@ -734,6 +749,39 @@ public class TestGarbageCollection {
     }
 
     @Test
+    public void testMovingBeansWithGcAtEnd() {
+        final List<Object> removedObjects = new ArrayList<>();
+        GarbageCollectionCallback gcConsumer = new GarbageCollectionCallback() {
+            @Override
+            public void onReject(Set<Instance> instances) {
+                for (Instance instance : instances) {
+                    removedObjects.add(instance.getBean());
+                }
+            }
+        };
+        GarbageCollector garbageCollector = createGarbageCollection(gcConsumer);
+
+        BeanWithLists parentBeanA = new BeanWithLists(garbageCollector);
+        garbageCollector.onBeanCreated(parentBeanA, true);
+
+        BeanWithLists parentBeanB = new BeanWithLists(garbageCollector);
+        garbageCollector.onBeanCreated(parentBeanB, true);
+
+        BeanWithProperties childBean = new BeanWithProperties(garbageCollector);
+        garbageCollector.onBeanCreated(childBean, false);
+
+        parentBeanA.getBeansList2().add(childBean);
+        parentBeanB.getBeansList2().add(childBean);
+        parentBeanA.getBeansList2().remove(childBean);
+        parentBeanB.getBeansList2().remove(childBean);
+
+        garbageCollector.gc();
+        assertThat(removedObjects, hasSize(1));
+        assertTrue(removedObjects.get(0) == childBean);
+        removedObjects.clear();
+    }
+
+    @Test
     public void testSubBeans() {
         final List<Object> removedObjects = new ArrayList<>();
         GarbageCollectionCallback gcConsumer = new GarbageCollectionCallback() {
@@ -804,6 +852,80 @@ public class TestGarbageCollection {
 
         assertEquals(garbageCollector.getManagedInstancesCount(), 0);
         garbageCollector.gc();
+    }
+
+    @Test
+    public void testGcCallsCount() {
+        final List<Object> removedObjects = new ArrayList<>();
+        GarbageCollectionCallback gcConsumer = new GarbageCollectionCallback() {
+            @Override
+            public void onReject(Set<Instance> instances) {
+                for (Instance instance : instances) {
+                    removedObjects.add(instance.getBean());
+                }
+            }
+        };
+        GarbageCollector garbageCollector = createGarbageCollection(gcConsumer);
+
+        garbageCollector.gc();
+        garbageCollector.gc();
+        garbageCollector.gc();
+        garbageCollector.gc();
+        garbageCollector.gc();
+
+        assertEquals(garbageCollector.getGcCalls(), 5);
+        garbageCollector.gc();
+        assertEquals(garbageCollector.getGcCalls(), 6);
+        garbageCollector.gc();
+        garbageCollector.gc();
+        garbageCollector.gc();
+        garbageCollector.gc();
+        garbageCollector.gc();
+        assertEquals(garbageCollector.getGcCalls(), 11);
+    }
+
+    @Test
+    public void testGcRemovedBeansCount() {
+        final List<Object> removedObjects = new ArrayList<>();
+        GarbageCollectionCallback gcConsumer = new GarbageCollectionCallback() {
+            @Override
+            public void onReject(Set<Instance> instances) {
+                for (Instance instance : instances) {
+                    removedObjects.add(instance.getBean());
+                }
+            }
+        };
+        GarbageCollector garbageCollector = createGarbageCollection(gcConsumer);
+
+        BeanWithProperties childBean = new BeanWithProperties(garbageCollector);
+        garbageCollector.onBeanCreated(childBean, false);
+
+        BeanWithProperties childBean2 = new BeanWithProperties(garbageCollector);
+        garbageCollector.onBeanCreated(childBean2, false);
+
+        BeanWithProperties childBean3 = new BeanWithProperties(garbageCollector);
+        garbageCollector.onBeanCreated(childBean3, false);
+
+        garbageCollector.gc();
+
+        assertEquals(garbageCollector.getRemovedBeansCount(), 3);
+
+        garbageCollector.gc();
+
+        assertEquals(garbageCollector.getRemovedBeansCount(), 3);
+
+        BeanWithProperties childBean4 = new BeanWithProperties(garbageCollector);
+        garbageCollector.onBeanCreated(childBean4, false);
+
+        BeanWithProperties childBean5 = new BeanWithProperties(garbageCollector);
+        garbageCollector.onBeanCreated(childBean5, false);
+
+        assertEquals(garbageCollector.getRemovedBeansCount(), 3);
+
+        garbageCollector.gc();
+
+        assertEquals(garbageCollector.getRemovedBeansCount(), 5);
+
     }
 
     private int addSomeContent(BeanWithLists parent, int maxDeep, int currentDeep, GarbageCollector garbageCollector) {

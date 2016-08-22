@@ -97,7 +97,7 @@ public class Instance {
      * @return true if the dolphin bean instance is a root bean or is referenced by a root bean
      */
     public boolean isReferencedByRoot() {
-        if(rootBean) {
+        if(isRootBean()) {
             return true;
         }
         for(Reference reference : references) {

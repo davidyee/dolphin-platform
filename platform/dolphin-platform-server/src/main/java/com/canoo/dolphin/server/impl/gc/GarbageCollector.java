@@ -79,6 +79,7 @@ public class GarbageCollector {
             return;
         }
         Assert.requireNonNull(bean, "bean");
+
         if (allInstances.containsKey(bean)) {
             throw new IllegalArgumentException("Bean instance is already managed!");
         }
@@ -97,6 +98,12 @@ public class GarbageCollector {
         if (!rootBean) {
             //Until the bean isn't referenced in another bean it will be removed at gc
             addToGC(instance, bean);
+        }
+
+        if(rootBean) {
+            LOG.trace("Bean of type {} registered for GC check", bean.getClass());
+        } else {
+            LOG.trace("Root bean of type {} registered for GC check", bean.getClass());
         }
     }
 
@@ -194,7 +201,7 @@ public class GarbageCollector {
             return;
         }
 
-        LOG.trace("Garbage collection started! GC will remove {} beans!", removeOnGC.size());
+        LOG.trace("Garbage collection run started! GC will remove {} beans!", removeOnGC.size());
 
         onRemoveCallback.onReject(removeOnGC.keySet());
         for (Instance removedInstance : removeOnGC.keySet()) {
@@ -206,6 +213,9 @@ public class GarbageCollector {
             }
             Object value = removeOnGC.get(removedInstance);
             allInstances.remove(value);
+
+            LOG.trace("Garbage collection removed bean of type {}", removedInstance.getBean().getClass());
+
         }
         removedBeansCount = removedBeansCount + removeOnGC.size();
         removeOnGC.clear();
@@ -266,12 +276,11 @@ public class GarbageCollector {
 
     private void addToGC(Instance instance, Object value) {
 
-        LOG.trace("Bean of type {} added to GC and will be removed on next GC run", value.getClass());
+        LOG.trace("A bean of type {} has no external references and will be removed on next GC run", value.getClass());
 
         removeOnGC.put(instance, value);
 
         LOG.trace("GC will remove {} beans at next GC run", removeOnGC.size());
-
 
         for (Property property : instance.getProperties()) {
             Object propertyValue = property.get();
@@ -295,12 +304,11 @@ public class GarbageCollector {
     }
 
     private void removeFromGC(Instance instance) {
-        LOG.trace("Bean of type {} removed to GC and will not be removed on next GC run", instance.getBean().getClass());
+        LOG.trace("A bean of type {} has new external references and will not be removed on next GC run", instance.getBean().getClass());
 
         Object removed = removeOnGC.remove(instance);
 
         LOG.trace("GC will remove {} beans at next GC run", removeOnGC.size());
-
 
         if (removed != null) {
             for (Property property : instance.getProperties()) {
