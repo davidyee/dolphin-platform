@@ -1,3 +1,6 @@
+//local command
+//eval $(docker-machine env default)
+
 //Base Java Image
 
 task buildJavaImage (type : Exec) {
@@ -22,13 +25,31 @@ task copyWarForPayaraIntegrationImage(type: Exec) {
 
 task buildPayaraIntegrationImage(type: Exec) {
     dependsOn copyWarForPayaraIntegrationImage, buildPayaraConfiguredImage
+    commandLine "docker", "rmi", "dolphin-platform/paraya-integration"
     commandLine "docker", "build", "-t", "dolphin-platform/paraya-integration", "docker-base/payara-integration"
 }
 
+task stopPayaraIntegrationImage(type: Exec) {
+    commandLine "docker", "stop", "paraya-integration"
+}
+
+task removePayaraIntegrationImage(type: Exec) {
+    dependsOn stopPayaraIntegrationImage
+    commandLine "docker", "rm", "paraya-integration"
+}
 
 task runPayaraIntegrationImage(type: Exec) {
-    dependsOn buildPayaraIntegrationImage
-    commandLine "docker", "run", "-t", "-p", "8282:8080", "--name", "paraya-integration", "dolphin-platform/paraya-integration"
+    dependsOn buildPayaraIntegrationImage, removePayaraIntegrationImage
+    commandLine "docker", "run", "-d", "-p", "8282:8080", "--name", "paraya-integration", "dolphin-platform/paraya-integration"
+}
+
+//LOG: AutoDeploy] Successfully autodeployed : /opt/payara41/glassfish/domains/domain1/autodeploy/todo-app.war.|#]
+
+task waitForPayaraIntegrationStarted(type: ExecWait) {
+    dependsOn runPayaraIntegrationImage
+    command "docker logs -f paraya-integration"
+    directory projectDir.toString()
+    ready '[AutoDeploy] Successfully autodeployed : '
 }
 
 // Base TomEE Image
@@ -51,10 +72,11 @@ task copyWarForWildflyIntegrationImage(type: Exec) {
 
 task buildWildflyIntegrationImage(type: Exec) {
     dependsOn copyWarForWildflyIntegrationImage, buildWildflyImage
+    commandLine "docker", "rmi", "dolphin-platform/wildfly-integration"
     commandLine "docker", "build", "-t", "dolphin-platform/wildfly-integration", "docker-base/wildfly-integration"
 }
 
 task runWildflyIntegrationImage(type: Exec) {
     dependsOn buildWildflyIntegrationImage
-    commandLine "docker", "run", "-t", "-p", "8282:8080", "--name", "wildfly-integration", "dolphin-platform/wildfly-integration"
+    commandLine "docker", "run", "-d", "-p", "8282:8080", "--name", "wildfly-integration", "dolphin-platform/wildfly-integration"
 }
