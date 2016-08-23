@@ -7,7 +7,7 @@ task buildJavaImage (type : Exec) {
     commandLine "docker", "build", "-t", "airhacks/java", "docker-base/java"
 }
 
-// Base Paraya Images
+// Base Payara Images
 
 task buildPayaraImage(type: Exec) {
     dependsOn buildJavaImage
@@ -31,11 +31,13 @@ task buildPayaraIntegrationImage(type: Exec) {
 
 task stopPayaraIntegrationImage(type: Exec) {
     commandLine "docker", "stop", "paraya-integration"
+    ignoreExitValue true
 }
 
 task removePayaraIntegrationImage(type: Exec) {
     dependsOn stopPayaraIntegrationImage
     commandLine "docker", "rm", "paraya-integration"
+    ignoreExitValue true
 }
 
 task runPayaraIntegrationImage(type: Exec) {
@@ -50,11 +52,52 @@ task waitForPayaraIntegrationStarted(type: ExecWait) {
     ready '[AutoDeploy] Successfully autodeployed : '
 }
 
+task runPayaraIntegrationTests() {
+    dependsOn waitForPayaraIntegrationStarted, removePayaraIntegrationImage
+}
+
 // Base TomEE Image
 
 task buildTomEEImage(type: Exec) {
     dependsOn buildJavaImage
     commandLine "docker", "build", "-t", "airhacks/tomee", "docker-base/tomee"
+}
+
+task copyWarForTomEEIntegrationImage(type: Exec) {
+    commandLine "cp", "../platform-examples/todo-example/todo-server-javaee/build/libs/todo-app.war", "docker-base/tomee-integration"
+}
+
+task buildTomEEIntegrationImage(type: Exec) {
+    dependsOn copyWarForTomEEIntegrationImage, buildTomEEImage
+    commandLine "docker", "rmi", "dolphin-platform/tomee-integration"
+    commandLine "docker", "build", "-t", "dolphin-platform/tomee-integration", "docker-base/tomee-integration"
+}
+
+task stopTomEEIntegrationImage(type: Exec) {
+    commandLine "docker", "stop", "tomee-integration"
+    ignoreExitValue true
+}
+
+task removeTomEEIntegrationImage(type: Exec) {
+    dependsOn stopTomEEIntegrationImage
+    commandLine "docker", "rm", "tomee-integration"
+    ignoreExitValue true
+}
+
+task runTomEEIntegrationImage(type: Exec) {
+    dependsOn buildTomEEIntegrationImage, removeTomEEIntegrationImage
+    commandLine "docker", "run", "-d", "-p", "8282:8080", "--name", "tomee-integration", "dolphin-platform/tomee-integration"
+}
+
+task waitForTomEEIntegrationStarted(type: ExecWait) {
+    dependsOn runTomEEIntegrationImage
+    command "docker logs -f tomee-integration"
+    directory projectDir.toString()
+    ready 'WildFly Full 10.0.0.Final (WildFly Core 2.0.10.Final) started'
+}
+
+task runTomEEIntegrationTests() {
+    dependsOn waitForTomEEIntegrationStarted, removeTomEEIntegrationImage
 }
 
 // Base Wildfly Image
@@ -76,11 +119,13 @@ task buildWildflyIntegrationImage(type: Exec) {
 
 task stopWildflyIntegrationImage(type: Exec) {
     commandLine "docker", "stop", "wildfly-integration"
+    ignoreExitValue true
 }
 
 task removeWildflyIntegrationImage(type: Exec) {
     dependsOn stopWildflyIntegrationImage
     commandLine "docker", "rm", "wildfly-integration"
+    ignoreExitValue true
 }
 
 task runWildflyIntegrationImage(type: Exec) {
@@ -93,4 +138,8 @@ task waitForWildflyIntegrationStarted(type: ExecWait) {
     command "docker logs -f wildfly-integration"
     directory projectDir.toString()
     ready 'WildFly Full 10.0.0.Final (WildFly Core 2.0.10.Final) started'
+}
+
+task runWildflyIntegrationTests() {
+    dependsOn waitForWildflyIntegrationStarted, removeWildflyIntegrationImage
 }
