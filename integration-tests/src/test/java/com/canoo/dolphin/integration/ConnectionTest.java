@@ -15,7 +15,7 @@ public class ConnectionTest {
         try {
             ClientContext context = ClientContextFactory.connect(configuration).get();
         } catch (Exception e) {
-            //Assert.fail("Can not create connection", e);
+            Assert.fail("Can not create connection", e);
         }
     }
 

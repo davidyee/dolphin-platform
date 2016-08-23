@@ -93,11 +93,7 @@ task payaraTest(type: Test) {
 
     outputs.upToDateWhen { false }
 }
-
-task integrationTest() {
-    dependsOn payaraTest
-}
-
+/*
 // Base TomEE Image
 
 task buildTomEEImage(type: Exec) {
@@ -186,4 +182,11 @@ task waitForWildflyIntegrationStarted(type: ExecWait) {
 
 task runWildflyIntegrationTests() {
     dependsOn waitForWildflyIntegrationStarted, test, removeWildflyIntegrationImage
+}*/
+
+
+//Main Task
+
+task integrationTest() {
+    dependsOn payaraTest
 }
