@@ -11,7 +11,7 @@ public class ConnectionTest {
 
     @Test
     public void testConnection() {
-        ClientConfiguration configuration = new JavaFXConfiguration("http://localhost:8282/todo-app/dolphin");
+        ClientConfiguration configuration = new JavaFXConfiguration("http://localhost:8080/todo-app/dolphin");
         configuration.setConnectionTimeout(10_000L);
         try {
             ClientContext context = ClientContextFactory.connect(configuration).get();
