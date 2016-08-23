@@ -19,5 +19,6 @@ before_install:
 script: ./gradlew clean build jacocoTestReport jacocoRootMergeReport -S
 
 after_success:
-  - ./gradlew :integration-tests:runPayaraIntegrationImage
+  - ./gradlew :integration-tests:waitForPayaraIntegrationStarted
+  - ./gradlew :integration-tests:waitForWildflyIntegrationStarted
   - ./gradlew coveralls

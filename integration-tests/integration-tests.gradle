@@ -43,8 +43,6 @@ task runPayaraIntegrationImage(type: Exec) {
     commandLine "docker", "run", "-d", "-p", "8282:8080", "--name", "paraya-integration", "dolphin-platform/paraya-integration"
 }
 
-//LOG: AutoDeploy] Successfully autodeployed : /opt/payara41/glassfish/domains/domain1/autodeploy/todo-app.war.|#]
-
 task waitForPayaraIntegrationStarted(type: ExecWait) {
     dependsOn runPayaraIntegrationImage
     command "docker logs -f paraya-integration"
@@ -76,7 +74,23 @@ task buildWildflyIntegrationImage(type: Exec) {
     commandLine "docker", "build", "-t", "dolphin-platform/wildfly-integration", "docker-base/wildfly-integration"
 }
 
+task stopWildflyIntegrationImage(type: Exec) {
+    commandLine "docker", "stop", "wildfly-integration"
+}
+
+task removeWildflyIntegrationImage(type: Exec) {
+    dependsOn stopWildflyIntegrationImage
+    commandLine "docker", "rm", "wildfly-integration"
+}
+
 task runWildflyIntegrationImage(type: Exec) {
-    dependsOn buildWildflyIntegrationImage
+    dependsOn buildWildflyIntegrationImage, removeWildflyIntegrationImage
     commandLine "docker", "run", "-d", "-p", "8282:8080", "--name", "wildfly-integration", "dolphin-platform/wildfly-integration"
+}
+
+task waitForWildflyIntegrationStarted(type: ExecWait) {
+    dependsOn runWildflyIntegrationImage
+    command "docker logs -f wildfly-integration"
+    directory projectDir.toString()
+    ready 'WildFly Full 10.0.0.Final (WildFly Core 2.0.10.Final) started'
 }
