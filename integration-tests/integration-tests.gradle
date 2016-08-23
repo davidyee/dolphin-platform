@@ -65,7 +65,7 @@ task removePayaraIntegrationImageAfterTest(type: Exec) {
 
 task runPayaraIntegrationImage(type: Exec) {
     dependsOn buildPayaraIntegrationImage, removePayaraIntegrationImage
-    commandLine "docker", "run", "-d", "-p", "8282:8080", "--name", "paraya-integration", "dolphin-platform/paraya-integration"
+    commandLine "docker", "run", "-d", "-p", "8080:8080", "-p", "4848:4848","--name", "paraya-integration", "dolphin-platform/paraya-integration"
 }
 
 task waitForPayaraIntegrationStarted(type: ExecWait) {
