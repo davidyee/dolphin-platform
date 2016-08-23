@@ -93,7 +93,7 @@ task waitForTomEEIntegrationStarted(type: ExecWait) {
     dependsOn runTomEEIntegrationImage
     command "docker logs -f tomee-integration"
     directory projectDir.toString()
-    ready 'WildFly Full 10.0.0.Final (WildFly Core 2.0.10.Final) started'
+    ready 'INFO - Server startup in '
 }
 
 task runTomEEIntegrationTests() {

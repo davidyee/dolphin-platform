@@ -1,6 +1,6 @@
 FROM airhacks/java
 MAINTAINER Adam Bien, adam-bien.com
-ENV ARCHIVE apache-tomee-plus-7.0.0-M3
+ENV ARCHIVE apache-tomee-plus-7.0.1
 ENV INSTALL_DIR /opt
 ENV SERVER_HOME ${INSTALL_DIR}/${ARCHIVE}
 RUN curl -o ${SERVER_HOME}.zip -L http://mirrors.ocf.berkeley.edu/apache/tomee/tomee-7.0.1/apache-tomee-7.0.1-plus.zip
