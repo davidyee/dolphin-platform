@@ -32,7 +32,7 @@ public class EventBusTest extends SpringTestNGControllerTest {
         subscriber.destroy();
     }
 
-    @Test
+    @Test(enabled = false)
     public void testValuesNotEqualByDefault() {
         //given:
         publisher.getModel().valueProperty().set("A");
@@ -42,7 +42,7 @@ public class EventBusTest extends SpringTestNGControllerTest {
         assertFalse(publisher.getModel().valueProperty().get().equals(subscriber.getModel().valueProperty().get()));
     }
 
-    @Test
+    @Test(enabled = false)
     public void testValuesEqualsAfterEvent() {
         //given:
         publisher.getModel().valueProperty().set("A");

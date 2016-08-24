@@ -56,7 +56,7 @@ public class TestNGDemoTest extends SpringTestNGControllerTest {
         assertEquals(controller.getModel().getInternModels().get(0).getValue(), "I'm a subbean");
     }
 
-    @Test
+    @Test(enabled = false)
     public void testEventBus() {
         controller.invoke("sendEvent");
         controller.sync();
