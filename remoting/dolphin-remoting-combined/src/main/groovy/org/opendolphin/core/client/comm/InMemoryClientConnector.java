@@ -46,9 +46,9 @@ public class InMemoryClientConnector extends AbstractClientConnector {
 
     @Override
     public List<Command> transmit(List<Command> commands) {
-        LOG.trace("transmitting {} commands", commands.size());
+        LOG.debug("C: sending {} commands to the server", commands.size());
         if (!DefaultGroovyMethods.asBoolean(serverConnector)) {
-            LOG.warn("no server connector wired for in-memory connector");
+            LOG.warn("C: no server connector wired for in-memory connector");
             return Collections.EMPTY_LIST;
         }
 
@@ -62,8 +62,14 @@ public class InMemoryClientConnector extends AbstractClientConnector {
 
         List<Command> result = new LinkedList<Command>();
         for (Command command : commands) {
-            LOG.trace("processing {}", command);
-            result.addAll(serverConnector.receive(command));// there is no need for encoding since we are in-memory
+            LOG.debug("C: Sending command {} to the server.", command);
+            List<Command> currentResults = serverConnector.receive(command);
+            LOG.debug("C: Server responded with {} commands", currentResults.size());
+            for(Command c : currentResults) {
+                LOG.debug("C: Server responded with command {}", c);
+            }
+
+            result.addAll(currentResults);// there is no need for encoding since we are in-memory
         }
 
         return result;

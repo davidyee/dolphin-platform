@@ -16,8 +16,10 @@
 package com.canoo.dolphin.test.impl;
 
 import com.canoo.dolphin.BeanManager;
+import com.canoo.dolphin.client.ClientBeanManager;
 import com.canoo.dolphin.client.ClientConfiguration;
 import com.canoo.dolphin.client.ClientContext;
+import com.canoo.dolphin.client.ControllerProxy;
 import com.canoo.dolphin.client.impl.ClientBeanBuilderImpl;
 import com.canoo.dolphin.client.impl.ClientBeanManagerImpl;
 import com.canoo.dolphin.client.impl.ClientContextImpl;
@@ -28,9 +30,11 @@ import com.canoo.dolphin.client.impl.ControllerProxyFactory;
 import com.canoo.dolphin.client.impl.ControllerProxyFactoryImpl;
 import com.canoo.dolphin.client.impl.DolphinCommandHandler;
 import com.canoo.dolphin.client.impl.ForwardableCallback;
+import com.canoo.dolphin.event.Subscription;
 import com.canoo.dolphin.impl.BeanRepositoryImpl;
 import com.canoo.dolphin.impl.ClassRepositoryImpl;
 import com.canoo.dolphin.impl.Converters;
+import com.canoo.dolphin.impl.PlatformConstants;
 import com.canoo.dolphin.impl.PresentationModelBuilderFactory;
 import com.canoo.dolphin.impl.ReflectionHelper;
 import com.canoo.dolphin.impl.collections.ListMapperImpl;
@@ -52,6 +56,9 @@ import com.canoo.dolphin.server.impl.ClasspathScanner;
 import com.canoo.dolphin.server.spring.ClientScope;
 import com.canoo.dolphin.test.ControllerTestException;
 import com.canoo.dolphin.util.Assert;
+import com.canoo.dolphin.util.Callback;
+import com.canoo.dolphin.util.DolphinRemotingException;
+import org.apache.http.client.HttpClient;
 import org.opendolphin.core.client.ClientDolphin;
 import org.opendolphin.core.client.comm.UiThreadHandler;
 import org.opendolphin.core.server.ServerModelStore;
@@ -63,6 +70,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.util.ArrayList;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 @Configuration
@@ -70,7 +78,7 @@ public class DolphinPlatformSpringTestBootstrap {
 
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
-    public ClientContext createClientContext(final DolphinTestContext dolphinContext, final TestInMemoryConfiguration config) throws ExecutionException, InterruptedException {
+    public ClientContextForTests createClientContext(final DolphinTestContext dolphinContext, final TestInMemoryConfiguration config) throws ExecutionException, InterruptedException {
         Assert.requireNonNull(dolphinContext, "dolphinContext");
         final ClientDolphin clientDolphin = dolphinContext.getClientDolphin();
 
@@ -96,15 +104,55 @@ public class DolphinPlatformSpringTestBootstrap {
         clientConfiguration.setHttpClient(new HttpClientMock());
         final ClientContext clientContext = new ClientContextImpl(clientConfiguration, clientDolphin, controllerProxyFactory, dolphinCommandHandler, platformBeanRepository, clientBeanManager, new ForwardableCallback());
 
-        //Currently the event bus can not used in tests. See https://github.com/canoo/dolphin-platform/issues/196
-     //   config.getClientExecutor().submit(new Runnable() {
-     //       @Override
-     //       public void run() {
-     //           clientDolphin.startPushListening(PlatformConstants.POLL_EVENT_BUS_COMMAND_NAME, PlatformConstants.RELEASE_EVENT_BUS_COMMAND_NAME);
-     //       }
-//
-  //      }).get();
-        return clientContext;
+        config.getClientExecutor().submit(new Runnable() {
+            @Override
+            public void run() {
+                clientDolphin.startPushListening(PlatformConstants.POLL_EVENT_BUS_COMMAND_NAME, PlatformConstants.RELEASE_EVENT_BUS_COMMAND_NAME);
+            }
+
+        }).get();
+        return new ClientContextForTests() {
+            @Override
+            public void sync() {
+                CompletableFuture<Void> future = new CompletableFuture<>();
+                clientDolphin.sync(new Runnable() {
+                    @Override
+                    public void run() {
+                        future.complete(null);
+                    }
+                });
+                try {
+                    future.get();
+                } catch (Exception e) {
+                    throw new RuntimeException("Error in sync call", e);
+                }
+            }
+
+            @Override
+            public <T> CompletableFuture<ControllerProxy<T>> createController(final String name) {
+                return clientContext.createController(name);
+            }
+
+            @Override
+            public ClientBeanManager getBeanManager() {
+                return clientContext.getBeanManager();
+            }
+
+            @Override
+            public CompletableFuture<Void> disconnect() {
+                return clientContext.disconnect();
+            }
+
+            @Override
+            public Subscription onRemotingError(final Callback<DolphinRemotingException> callback) {
+                return clientContext.onRemotingError(callback);
+            }
+
+            @Override
+            public HttpClient getHttpClient() {
+                return clientContext.getHttpClient();
+            }
+        };
     }
 
     @Bean
@@ -170,7 +218,7 @@ public class DolphinPlatformSpringTestBootstrap {
         return context.getDolphinEventBus();
     }
 
-    @Bean(name="propertyBinder")
+    @Bean(name = "propertyBinder")
     @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
     protected PropertyBinder createPropertyBinder() {
         return new PropertyBinderImpl();
