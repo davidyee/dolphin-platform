@@ -76,6 +76,7 @@ task waitForPayaraIntegrationStarted(type: ExecWait) {
 }
 
 task payaraTest(type: Test) {
+    //TODO: Needed
     //apply from: rootProject.file('gradle/code-coverage.gradle')
     //projectsWithCoverage << subprj
 
