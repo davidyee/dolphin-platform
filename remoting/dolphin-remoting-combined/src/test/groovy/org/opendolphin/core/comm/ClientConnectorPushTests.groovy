@@ -70,6 +70,7 @@ class ClientConnectorPushTests extends Specification {
         clientDolphin.isPushListening() == false
     }
 
+    @Ignore
     void "core push: server-side commands are immediately processed when listening"() {
         given:
         CountDownLatch pushWasCalled = new CountDownLatch(1)

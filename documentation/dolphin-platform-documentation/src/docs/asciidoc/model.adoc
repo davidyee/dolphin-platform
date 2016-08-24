@@ -39,10 +39,11 @@ public class MyModel {
 }
 ----
 
-NOTE: Maybe you ask yourself why the `@DolphinBean` annotation is needed. Currently the Dolphin Platform don't need the
-annotation and don't evaluate the annotation. We plan to add some features based on the annotation in the future. One
-example can be an annotation processor that checks if all classes that are defined as Dolphin Platform beans (by adding
-the `@DolphinBean` annotation) are valid Dolphin Platform beans.
+NOTE: Maybe you ask yourself why the `@DolphinBean` annotation is needed. Internally the Dolphin Platform checks if a bean
+class is annotated with `@DolphinBean` and will trow a `BeanDefinitionException` if the annotation is not present. By
+doing so it will be easy to check if you use the right model classes. We plan to add some additional features based on
+the annotation in the future. One example can be an annotation processor that checks if all classes that are defined as
+the Dolphin Platform beans (by adding the `@DolphinBean` annotation) are valid Dolphin Platform beans.
 
 [[supported-types]]
 == Supported types
@@ -143,7 +144,8 @@ TODO
 
 The Dolphin Platform contains a garbage collection on the server that will automatically remove all bean instances from
 the remoting layer that aren't referenced anymore by other beans. Currently the garbage collection is an experimental
-feature and it's active by default. If you want to use the garbage collection you need to activate it in the `dolphin.properties` file.
+feature and it's not active by default. If you want to use the garbage collection you need to add
+`garbageCollectionActive=true` to the `dolphin.properties` file (see chapter *Server configuration*).
 
 == How to work with the Model API
 
