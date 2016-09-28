@@ -11,28 +11,12 @@ dependencies {
 
 //Base Java Image
 
-task buildJavaImage (type : Exec) {
-    commandLine "docker", "build", "-t", "airhacks/java", "docker-base/java"
-}
-
-// Base Payara Images
-
-task buildPayaraImage(type: Exec) {
-    dependsOn buildJavaImage
-    commandLine "docker", "build", "-t", "airhacks/payara", "docker-base/payara"
-}
-
-task buildPayaraConfiguredImage(type: Exec) {
-    dependsOn buildPayaraImage
-    commandLine "docker", "build", "-t", "airhacks/payara-configured", "docker-base/payara-configured"
-}
-
 task copyWarForPayaraIntegrationImage(type: Exec) {
     commandLine "cp", "../platform-examples/todo-example/todo-server-javaee/build/libs/todo-app.war", "docker-base/payara-integration"
 }
 
 task buildPayaraIntegrationImage(type: Exec) {
-    dependsOn copyWarForPayaraIntegrationImage, buildPayaraConfiguredImage
+    dependsOn copyWarForPayaraIntegrationImage
     commandLine "docker", "rmi", "dolphin-platform/paraya-integration"
     commandLine "docker", "build", "-t", "dolphin-platform/paraya-integration", "docker-base/payara-integration"
 }
@@ -94,96 +78,6 @@ task payaraTest(type: Test) {
 
     outputs.upToDateWhen { false }
 }
-/*
-// Base TomEE Image
-
-task buildTomEEImage(type: Exec) {
-    dependsOn buildJavaImage
-    commandLine "docker", "build", "-t", "airhacks/tomee", "docker-base/tomee"
-}
-
-task copyWarForTomEEIntegrationImage(type: Exec) {
-    commandLine "cp", "../platform-examples/todo-example/todo-server-javaee/build/libs/todo-app.war", "docker-base/tomee-integration"
-}
-
-task buildTomEEIntegrationImage(type: Exec) {
-    dependsOn copyWarForTomEEIntegrationImage, buildTomEEImage
-    commandLine "docker", "build", "-t", "dolphin-platform/tomee-integration", "docker-base/tomee-integration"
-}
-
-task stopTomEEIntegrationContainer(type: Exec) {
-    commandLine "docker", "stop", "tomee-integration"
-    ignoreExitValue true
-}
-
-task removeTomEEIntegrationContainer(type: Exec) {
-    dependsOn stopTomEEIntegrationContainer
-    commandLine "docker", "rm", "tomee-integration"
-    ignoreExitValue true
-}
-
-task runTomEEIntegrationContainer(type: Exec) {
-    dependsOn buildTomEEIntegrationImage
-    //dependsOn removeTomEEIntegrationContainer
-    commandLine "docker", "run", "-d", "-p", "8282:8080", "--name", "tomee-integration", "dolphin-platform/tomee-integration"
-}
-
-task waitForTomEEIntegrationStarted(type: ExecWait) {
-    dependsOn runTomEEIntegrationContainer
-    command "docker logs -f tomee-integration"
-    directory projectDir.toString()
-    ready 'INFO - Server startup in '
-}
-
-task runTomEEIntegrationTests() {
-    dependsOn waitForTomEEIntegrationStarted
-    dependsOn test
-    finalizedBy removeTomEEIntegrationContainer
-}
-
-// Base Wildfly Image
-
-task buildWildflyImage(type: Exec) {
-    dependsOn buildJavaImage
-    commandLine "docker", "build", "-t", "airhacks/wildfly", "docker-base/wildfly"
-}
-
-task copyWarForWildflyIntegrationImage(type: Exec) {
-    commandLine "cp", "../platform-examples/todo-example/todo-server-javaee/build/libs/todo-app.war", "docker-base/wildfly-integration"
-}
-
-task buildWildflyIntegrationImage(type: Exec) {
-    dependsOn copyWarForWildflyIntegrationImage, buildWildflyImage
-    commandLine "docker", "rmi", "dolphin-platform/wildfly-integration"
-    commandLine "docker", "build", "-t", "dolphin-platform/wildfly-integration", "docker-base/wildfly-integration"
-}
-
-task stopWildflyIntegrationImage(type: Exec) {
-    commandLine "docker", "stop", "wildfly-integration"
-    ignoreExitValue true
-}
-
-task removeWildflyIntegrationImage(type: Exec) {
-    dependsOn stopWildflyIntegrationImage
-    commandLine "docker", "rm", "wildfly-integration"
-    ignoreExitValue true
-}
-
-task runWildflyIntegrationImage(type: Exec) {
-    dependsOn buildWildflyIntegrationImage, removeWildflyIntegrationImage
-    commandLine "docker", "run", "-d", "-p", "8282:8080", "--name", "wildfly-integration", "dolphin-platform/wildfly-integration"
-}
-
-task waitForWildflyIntegrationStarted(type: ExecWait) {
-    dependsOn runWildflyIntegrationImage
-    command "docker logs -f wildfly-integration"
-    directory projectDir.toString()
-    ready 'WildFly Full 10.0.0.Final (WildFly Core 2.0.10.Final) started'
-}
-
-task runWildflyIntegrationTests() {
-    dependsOn waitForWildflyIntegrationStarted, test, removeWildflyIntegrationImage
-}*/
 
 
 //Main Task
