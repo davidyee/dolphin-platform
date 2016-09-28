@@ -34,7 +34,6 @@ import com.canoo.dolphin.event.Subscription;
 import com.canoo.dolphin.impl.BeanRepositoryImpl;
 import com.canoo.dolphin.impl.ClassRepositoryImpl;
 import com.canoo.dolphin.impl.Converters;
-import com.canoo.dolphin.impl.PlatformConstants;
 import com.canoo.dolphin.impl.PresentationModelBuilderFactory;
 import com.canoo.dolphin.impl.ReflectionHelper;
 import com.canoo.dolphin.impl.collections.ListMapperImpl;
@@ -69,6 +68,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 import org.springframework.web.context.WebApplicationContext;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -78,11 +79,12 @@ public class DolphinPlatformSpringTestBootstrap {
 
     @Bean
     @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
-    public ClientContextForTests createClientContext(final DolphinTestContext dolphinContext, final TestInMemoryConfiguration config) throws ExecutionException, InterruptedException {
+    public ClientContext createClientContext(final DolphinTestContext dolphinContext, final TestInMemoryConfiguration config) throws ExecutionException, InterruptedException, MalformedURLException {
         Assert.requireNonNull(dolphinContext, "dolphinContext");
         final ClientDolphin clientDolphin = dolphinContext.getClientDolphin();
 
-        final ClientConfiguration clientConfiguration = new ClientConfiguration("PIPE", new UiThreadHandler() {
+        final URL dummyURL = new URL("http://dummyURL");
+        final ClientConfiguration clientConfiguration = new ClientConfiguration(dummyURL, new UiThreadHandler() {
 
             @Override
             public void executeInsideUiThread(Runnable runnable) {
@@ -107,14 +109,16 @@ public class DolphinPlatformSpringTestBootstrap {
         config.getClientExecutor().submit(new Runnable() {
             @Override
             public void run() {
-                clientDolphin.startPushListening(PlatformConstants.POLL_EVENT_BUS_COMMAND_NAME, PlatformConstants.RELEASE_EVENT_BUS_COMMAND_NAME);
+                //Currently the event bus can not used in tests. See https://github.com/canoo/dolphin-platform/issues/196
+                //clientDolphin.startPushListening(PlatformConstants.POLL_EVENT_BUS_COMMAND_NAME, PlatformConstants.RELEASE_EVENT_BUS_COMMAND_NAME);
             }
 
         }).get();
+
         return new ClientContextForTests() {
             @Override
             public void sync() {
-                CompletableFuture<Void> future = new CompletableFuture<>();
+                final CompletableFuture<Void> future = new CompletableFuture<>();
                 clientDolphin.sync(new Runnable() {
                     @Override
                     public void run() {

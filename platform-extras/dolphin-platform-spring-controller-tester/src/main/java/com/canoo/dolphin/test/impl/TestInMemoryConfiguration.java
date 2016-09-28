@@ -18,6 +18,7 @@ package com.canoo.dolphin.test.impl;
 import org.opendolphin.core.client.ClientDolphin;
 import org.opendolphin.core.client.ClientModelStore;
 import org.opendolphin.core.client.comm.InMemoryClientConnector;
+import org.opendolphin.core.client.comm.SynchronousInMemoryClientConnector;
 import org.opendolphin.core.client.comm.UiThreadHandler;
 import org.opendolphin.core.server.DefaultServerDolphin;
 import org.opendolphin.core.server.ServerDolphinFactory;
@@ -36,7 +37,7 @@ public class TestInMemoryConfiguration {
     public TestInMemoryConfiguration() {
         clientDolphin.setClientModelStore(new ClientModelStore(clientDolphin));
 
-        InMemoryClientConnector inMemoryClientConnector = new InMemoryClientConnector(clientDolphin, serverDolphin.getServerConnector());
+        InMemoryClientConnector inMemoryClientConnector = new SynchronousInMemoryClientConnector(clientDolphin, serverDolphin.getServerConnector());
 
         inMemoryClientConnector.setSleepMillis(0);
         inMemoryClientConnector.setStrictMode(false);
