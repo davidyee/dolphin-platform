@@ -26,6 +26,8 @@ import javafx.application.Platform;
 import javafx.stage.Stage;
 
 import java.util.concurrent.TimeUnit;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 /**
  * Defines a basic application class for Dolphin Platform based applications that can be used like the {@link Application}
@@ -57,14 +59,20 @@ public abstract class DolphinPlatformApplication extends Application {
      * @return The Dolphin Platform configuration for this client
      */
     protected JavaFXConfiguration getClientConfiguration() {
-        return new JavaFXConfiguration(getServerEndpoint());
+        JavaFXConfiguration configuration = null;
+        try {
+            configuration = new JavaFXConfiguration(getServerEndpoint());
+        } catch (MalformedURLException e) {
+            throw new ClientInitializationException("Client configuration cannot be created", e);
+        }
+        return configuration;
     }
 
     /**
      * Returns the server url of the Dolphin Platform server endpoint.
      * @return the server url
      */
-    protected abstract String getServerEndpoint();
+    protected abstract URL getServerEndpoint() throws MalformedURLException;
 
     /**
      * This methods defines parts of the Dolphin Platform lifecyycle and is therefore defined as final.
@@ -76,9 +84,13 @@ public abstract class DolphinPlatformApplication extends Application {
     public final void start(final Stage primaryStage) throws Exception {
         Assert.requireNonNull(primaryStage, "primaryStage");
         if (initializationException == null) {
-            if(clientContext != null) {
+            if (clientContext != null) {
                 clientContext.onRemotingError(e -> onRemotingError(primaryStage, e));
-                start(primaryStage, clientContext);
+                try {
+                    start(primaryStage, clientContext);
+                } catch (Exception e) {
+                    onInitializationError(primaryStage, new ClientInitializationException("Error in application start!", e));
+                }
             } else {
                 onInitializationError(primaryStage, new ClientInitializationException("No clientContext was created!"));
             }
@@ -115,7 +127,7 @@ public abstract class DolphinPlatformApplication extends Application {
      */
     @Override
     public final void stop() throws Exception {
-        if(clientContext != null) {
+        if (clientContext != null) {
             try {
                 clientContext.disconnect().get(2, TimeUnit.SECONDS);
                 onShutdown();
@@ -155,7 +167,7 @@ public abstract class DolphinPlatformApplication extends Application {
      * This method will be called in the {@link Application#stop()} method after the connection to the Dolphin
      * Platform server is closed. Application developers can define some kind of close handling here.
      *
-     *  By default the methods calls {@link System#exit(int)}
+     * By default the methods calls {@link System#exit(int)}
      */
     protected void onShutdown() {
         System.exit(0);
