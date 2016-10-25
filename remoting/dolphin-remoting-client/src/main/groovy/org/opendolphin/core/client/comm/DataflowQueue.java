@@ -13,17 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.opendolphin.core.client.comm
+package org.opendolphin.core.client.comm;
 
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit;
 
-class RunLaterUiThreadHandler implements UiThreadHandler {
+/**
+ * Created by hendrikebbers on 29.08.16.
+ */
+public interface DataflowQueue<T> {
 
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    T getVal() throws InterruptedException;
 
-    @Override
-    void executeInsideUiThread(final Runnable runnable) {
-        executorService.execute(runnable);
-    }
+    T getVal(long value,TimeUnit timeUnit) throws InterruptedException;
+
+    void add(T value);
+
+    int length();
+
+
 }

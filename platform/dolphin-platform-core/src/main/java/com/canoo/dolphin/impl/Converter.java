@@ -13,17 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.opendolphin.core.client.comm
+package com.canoo.dolphin.impl;
 
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+public interface Converter {
 
-class RunLaterUiThreadHandler implements UiThreadHandler {
+    Object convertFromDolphin(Object value);
 
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    Object convertToDolphin(Object value);
 
-    @Override
-    void executeInsideUiThread(final Runnable runnable) {
-        executorService.execute(runnable);
-    }
 }

@@ -13,17 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.opendolphin.core.client.comm
+package com.canoo.dolphin.client;
 
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import java.util.concurrent.ThreadFactory;
 
-class RunLaterUiThreadHandler implements UiThreadHandler {
+public interface DolphinPlatformThreadFactory extends ThreadFactory {
 
-    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-
-    @Override
-    void executeInsideUiThread(final Runnable runnable) {
-        executorService.execute(runnable);
-    }
+    void setUncaughtExceptionHandler(Thread.UncaughtExceptionHandler uncaughtExceptionHandler);
 }
