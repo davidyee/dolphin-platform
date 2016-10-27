@@ -45,7 +45,6 @@ allprojects {
     apply plugin: 'base'
     apply plugin: 'idea'
     apply plugin: 'com.github.ben-manes.versions'
-    apply plugin: 'groovy'
 
     repositories {
         jcenter()
