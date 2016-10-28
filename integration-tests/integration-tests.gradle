@@ -1,87 +1,31 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath "com.avast.gradle:docker-compose-gradle-plugin:0.3.13"
+    }
+}
+
+apply plugin: 'docker-compose'
 
 dependencies {
     compile project(':dolphin-platform-client-javafx')
+    compile "org.slf4j:slf4j-api:$slf4jVersion"
+    testCompile "org.testng:testng:$testngVersion"
+    testCompile 'org.hamcrest:java-hamcrest:2.0.0.0'
+    testCompile "org.jmockit:jmockit:$jmockitVersion"
 }
 
-
-//DOCKER
-
-//local command
-//eval $(docker-machine env default)
-
-//Base Java Image
-
-task copyWarForPayaraIntegrationImage(type: Exec) {
-    commandLine "cp", "../platform-examples/todo-example/todo-server-javaee/build/libs/todo-app.war", "docker-base/payara-integration"
+dockerCompose {
+    useComposeFiles = ['docker-compose.yml']
+    captureContainersOutput = true
 }
 
-task buildPayaraIntegrationImage(type: Exec) {
-    dependsOn copyWarForPayaraIntegrationImage
-    commandLine "docker", "rmi", "dolphin-platform/paraya-integration"
-    commandLine "docker", "build", "-t", "dolphin-platform/paraya-integration", "docker-base/payara-integration"
-}
-
-task stopPayaraIntegrationImage(type: Exec) {
-    commandLine "docker", "stop", "paraya-integration"
-    ignoreExitValue true
-    outputs.upToDateWhen {false}
-}
-
-task removePayaraIntegrationImage(type: Exec) {
-    dependsOn stopPayaraIntegrationImage
-    commandLine "docker", "rm", "paraya-integration"
-    ignoreExitValue true
-    outputs.upToDateWhen {false}
-}
-
-task stopPayaraIntegrationImageAfterTest(type: Exec) {
-    commandLine "docker", "stop", "paraya-integration"
-    ignoreExitValue true
-    outputs.upToDateWhen {false}
-}
-
-task removePayaraIntegrationImageAfterTest(type: Exec) {
-    dependsOn stopPayaraIntegrationImageAfterTest
-    commandLine "docker", "rm", "paraya-integration"
-    ignoreExitValue true
-    outputs.upToDateWhen {false}
-}
-
-task runPayaraIntegrationImage(type: Exec) {
-    dependsOn buildPayaraIntegrationImage, removePayaraIntegrationImage
-    commandLine "docker", "run", "-d", "-p", "8080:8080", "-p", "4848:4848","--name", "paraya-integration", "dolphin-platform/paraya-integration"
-}
-
-task waitForPayaraIntegrationStarted(type: ExecWait) {
-    dependsOn runPayaraIntegrationImage
-    command "docker logs -f paraya-integration"
-    directory projectDir.toString()
-    ready '[AutoDeploy] Successfully autodeployed : '
-}
-
-task payaraTest(type: Test) {
-    //TODO: Needed
-    //apply from: rootProject.file('gradle/code-coverage.gradle')
-    //projectsWithCoverage << subprj
-
-    dependsOn waitForPayaraIntegrationStarted
-    finalizedBy removePayaraIntegrationImageAfterTest
-
-    dependencies {
-        compile "org.slf4j:slf4j-api:$slf4jVersion"
-        testCompile "org.testng:testng:$testngVersion"
-        testCompile 'org.hamcrest:java-hamcrest:2.0.0.0'
-        testCompile "org.jmockit:jmockit:$jmockitVersion"
-    }
-
+task integrationTest(type: Test) {
     useTestNG()
-
     outputs.upToDateWhen { false }
 }
 
-
-//Main Task
-
-task integrationTest() {
-    dependsOn payaraTest
-}
+dockerCompose.isRequiredBy(integrationTest)

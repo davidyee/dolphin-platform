@@ -15,35 +15,29 @@
  */
 package com.canoo.dolphin.integration;
 
-import com.canoo.dolphin.client.ClientConfiguration;
-import com.canoo.dolphin.client.ClientContext;
-import com.canoo.dolphin.client.ClientContextFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
 
-public class ConnectionTest {
+public class ConnectionTest extends AbstractIntegrationTest {
 
-    @Test
-    public void testConnection() {
+    @Test(dataProvider = "endpoints", description = "Tests if the client API can create a conection to the server")
+    public void testConnection(String containerType, String endpoint) {
         try {
-            ClientConfiguration configuration = null;
-
-            configuration = new ClientConfiguration(new URL("http://localhost:8080/todo-app/dolphin"), r -> r.run());
-            configuration.setDolphinLogLevel(Level.FINE);
-            configuration.setConnectionTimeout(10_000L);
-            try {
-                ClientContext context = ClientContextFactory.connect(configuration).get(configuration.getConnectionTimeout(), TimeUnit.MILLISECONDS);
-            } catch (Exception e) {
-                Assert.fail("Can not create connection", e);
-            }
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
+            createClientContext(endpoint);
+        } catch (Exception e) {
+            Assert.fail("Can not create connection for " + containerType, e);
         }
     }
 
+    //Test cause deadlock based on eventbus deadlock (release before poll)
+    @Test(dataProvider = "endpoints", enabled = false)
+    public void testCreateController(String containerType, String endpoint) {
+        try {
+            createClientContext(endpoint).createController("ToDoController").get(10_000, TimeUnit.MILLISECONDS);
+        } catch (Exception e) {
+            Assert.fail("Can not create controller for " + containerType, e);
+        }
+    }
 }
