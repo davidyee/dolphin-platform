@@ -12,7 +12,7 @@ public class HealthCheckServlet extends HttpServlet  {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        if(DolphinPlatformBootstrap.getInstance().isUp()) {
+        if(DolphinPlatformBootstrap.isUp()) {
             resp.getWriter().print("OK");
         } else {
             resp.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
