@@ -55,6 +55,10 @@ public class ConfigurationFileLoader {
 
     private static final String USE_SESSION_INVALIDATION_SERVLET = "useSessionInvalidationServlet";
 
+    private static final String USE_HEALTH_CHECK = "useHealthCheck";
+
+    private static final String HEALTH_CHECK_SERVLET_MAPPING = "HealthCheckServletMapping";
+
     private static final String GARBAGE_COLLECTION_ACTIVE = "garbageCollectionActive";
 
     private static final String SESSION_TIMEOUT = "sessionTimeout";
@@ -137,46 +141,46 @@ public class ConfigurationFileLoader {
                 configuration.setOpenDolphinLogLevel(Level.WARNING);
             }
         }
-
         if (prop.containsKey(DOLPHIN_PLATFORM_SERVLET_MAPPING)) {
             configuration.setDolphinPlatformServletMapping(prop.getProperty(DOLPHIN_PLATFORM_SERVLET_MAPPING));
         }
-
         if (prop.containsKey(ROOT_PACKAGE_FOR_CLASSPATH_SCAN)) {
             configuration.setRootPackageForClasspathScan(prop.getProperty(ROOT_PACKAGE_FOR_CLASSPATH_SCAN));
         }
-
         if (prop.containsKey(MBEAN_REGISTRATION)) {
             configuration.setMBeanRegistration(Boolean.parseBoolean(prop.getProperty(MBEAN_REGISTRATION)));
         }
-
         if (prop.containsKey(USE_CROSS_SITE_ORIGIN_FILTER)) {
             configuration.setUseCrossSiteOriginFilter(Boolean.parseBoolean(prop.getProperty(DOLPHIN_PLATFORM_SERVLET_MAPPING)));
         }
         if (prop.containsKey(USE_SESSION_INVALIDATION_SERVLET)) {
             configuration.setUseSessionInvalidationServlet(Boolean.parseBoolean(prop.getProperty(USE_SESSION_INVALIDATION_SERVLET)));
         }
-
         if (prop.containsKey(GARBAGE_COLLECTION_ACTIVE)) {
             UnstableFeatureFlags.setUseGc(Boolean.parseBoolean(prop.getProperty(GARBAGE_COLLECTION_ACTIVE)));
         }
-
         if (prop.containsKey(SESSION_TIMEOUT)) {
             configuration.setSessionTimeout(Integer.parseInt(prop.getProperty(SESSION_TIMEOUT)));
         }
-
         if (prop.containsKey(MAX_CLIENTS_PER_SESSION)) {
             configuration.setMaxClientsPerSession(Integer.parseInt(prop.getProperty(MAX_CLIENTS_PER_SESSION)));
         }
-
         if (prop.containsKey(ID_FILTER_URL_MAPPINGS)) {
             String content = prop.getProperty(ID_FILTER_URL_MAPPINGS);
             configuration.setIdFilterUrlMappings(Arrays.asList(content.split(",")));
         }
+        if (prop.containsKey(HEALTH_CHECK_SERVLET_MAPPING)) {
+            configuration.setDolphinHealthCheckServletMapping(prop.getProperty(HEALTH_CHECK_SERVLET_MAPPING));
+        }
+        if (prop.containsKey(USE_HEALTH_CHECK)) {
+            configuration.setUseHealthCheck(Boolean.parseBoolean(prop.getProperty(USE_HEALTH_CHECK)));
+        }
+
 
         if (prop.containsKey(MAX_POLL_TIME)) {
             configuration.setMaxPollTime(Long.parseLong(prop.getProperty(MAX_POLL_TIME)));
         }
+
 
         return configuration;
     }
