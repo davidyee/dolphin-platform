@@ -44,10 +44,10 @@ import groovy.lang.Closure;
 import org.opendolphin.core.client.ClientDolphin;
 import org.opendolphin.core.client.ClientModelStore;
 import org.opendolphin.core.client.comm.AbstractClientConnector;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Factory to create a {@link ClientContext}. Normally you will create a {@link ClientContext} at the bootstrap of your
@@ -55,6 +55,9 @@ import java.util.logging.Logger;
  * The {@link ClientContext} defines the connection between the client and the Dolphin Platform server endpoint.
  */
 public class ClientContextFactory {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ClientContextFactory.class);
+
 
     private ClientContextFactory() {
     }
@@ -71,8 +74,8 @@ public class ClientContextFactory {
         Assert.requireNonNull(clientConfiguration, "clientConfiguration");
         final CompletableFuture<ClientContext> result = new CompletableFuture<>();
 
-        Level openDolphinLogLevel = clientConfiguration.getDolphinLogLevel();
-        Logger openDolphinLogger = Logger.getLogger("org.opendolphin");
+        java.util.logging.Level openDolphinLogLevel = clientConfiguration.getDolphinLogLevel();
+        java.util.logging.Logger openDolphinLogger = java.util.logging.Logger.getLogger("org.opendolphin");
         openDolphinLogger.setLevel(openDolphinLogLevel);
 
         clientConfiguration.getBackgroundExecutor().execute(() -> {
@@ -85,6 +88,7 @@ public class ClientContextFactory {
 
                     @Override
                     public Object call(Object... args) {
+                        LOG.error("Error in Dolphin Platform remoting layer", (Throwable) args[0]);
                         result.completeExceptionally(new DolphinRemotingException("Internal Exception", (Throwable) args[0]));
                         return null;
                     }
