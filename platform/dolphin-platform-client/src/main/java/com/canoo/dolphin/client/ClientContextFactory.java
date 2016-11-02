@@ -40,10 +40,10 @@ import com.canoo.dolphin.internal.EventDispatcher;
 import com.canoo.dolphin.internal.collections.ListMapper;
 import com.canoo.dolphin.util.Assert;
 import com.canoo.dolphin.util.DolphinRemotingException;
-import groovy.lang.Closure;
 import org.opendolphin.core.client.ClientDolphin;
 import org.opendolphin.core.client.ClientModelStore;
 import org.opendolphin.core.client.comm.AbstractClientConnector;
+import org.opendolphin.core.client.comm.ExceptionHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,8 +74,8 @@ public class ClientContextFactory {
         Assert.requireNonNull(clientConfiguration, "clientConfiguration");
         final CompletableFuture<ClientContext> result = new CompletableFuture<>();
 
-        java.util.logging.Level openDolphinLogLevel = clientConfiguration.getDolphinLogLevel();
-        java.util.logging.Logger openDolphinLogger = java.util.logging.Logger.getLogger("org.opendolphin");
+        final java.util.logging.Level openDolphinLogLevel = clientConfiguration.getDolphinLogLevel();
+        final java.util.logging.Logger openDolphinLogger = java.util.logging.Logger.getLogger("org.opendolphin");
         openDolphinLogger.setLevel(openDolphinLogLevel);
 
         clientConfiguration.getBackgroundExecutor().execute(() -> {
@@ -84,17 +84,16 @@ public class ClientContextFactory {
                 final ClientDolphin clientDolphin = new ClientDolphin();
                 clientDolphin.setClientModelStore(new ClientModelStore(clientDolphin));
                 final AbstractClientConnector clientConnector = new DolphinPlatformHttpClientConnector(clientDolphin, new OptimizedJsonCodec(), clientConfiguration.getHttpClient(), clientConfiguration.getServerEndpoint(), remotingErrorHandler, clientConfiguration.getUiThreadHandler());
-                Closure closure = new Closure(null) {
+                final ExceptionHandler exceptionHandler = new ExceptionHandler() {
 
                     @Override
-                    public Object call(Object... args) {
-                        LOG.error("Error in Dolphin Platform remoting layer", (Throwable) args[0]);
-                        result.completeExceptionally(new DolphinRemotingException("Internal Exception", (Throwable) args[0]));
-                        return null;
+                    public void handle(Throwable e) {
+                        LOG.error("Error in Dolphin Platform remoting layer", e);
+                        result.completeExceptionally(new DolphinRemotingException("Internal Exception", e));
                     }
                 };
 
-                clientConnector.setOnException(closure);
+                clientConnector.setOnException(exceptionHandler);
                 clientDolphin.setClientConnector(clientConnector);
                 final DolphinCommandHandler dolphinCommandHandler = new DolphinCommandHandler(clientDolphin);
                 final EventDispatcher dispatcher = new ClientEventDispatcher(clientDolphin);
