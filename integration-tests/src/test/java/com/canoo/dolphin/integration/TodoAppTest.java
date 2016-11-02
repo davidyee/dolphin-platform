@@ -28,7 +28,7 @@ import static com.canoo.dolphin.todo.TodoAppConstants.CONTROLLER_NAME;
 
 public class TodoAppTest extends AbstractIntegrationTest {
 
-    @Test(dataProvider = "endpoints", description = "Tests if the client API can create a conection to the server")
+    @Test(dataProvider = ENDPOINTS_DATAPROVIDER, description = "Tests if the client API can create a conection to the server")
     public void testConnection(String containerType, String endpoint) {
         try {
             ClientContext context = createClientContext(endpoint);
@@ -38,7 +38,7 @@ public class TodoAppTest extends AbstractIntegrationTest {
         }
     }
 
-    @Test(dataProvider = "endpoints")
+    @Test(dataProvider = ENDPOINTS_DATAPROVIDER, description = "Test if controller and model can be created")
     public void testCreateController(String containerType, String endpoint) {
         try {
             ClientContext context = createClientContext(endpoint);
@@ -54,7 +54,7 @@ public class TodoAppTest extends AbstractIntegrationTest {
         }
     }
 
-    @Test(dataProvider = "endpoints")
+    @Test(dataProvider = ENDPOINTS_DATAPROVIDER, description = "Tests if an item can be added to the todo list")
     public void testAddItem(String containerType, String endpoint) {
         try {
             ClientContext context = createClientContext(endpoint);
@@ -74,7 +74,7 @@ public class TodoAppTest extends AbstractIntegrationTest {
         }
     }
 
-    @Test(dataProvider = "endpoints")
+    @Test(dataProvider = ENDPOINTS_DATAPROVIDER, description = "Tests if an added item will be synchronized on multiple clients")
     public void testClientSync(String containerType, String endpoint) {
         try {
             ClientContext context1 = createClientContext(endpoint);

@@ -19,6 +19,8 @@ import java.util.logging.Level;
 
 public class AbstractIntegrationTest {
 
+    public final static String ENDPOINTS_DATAPROVIDER = "endpoints";
+
     protected void waitUntilServerIsUp(String host, long time, TimeUnit timeUnit) throws TimeoutException {
         long startTime = System.currentTimeMillis();
         long waitMillis = timeUnit.toMillis(time);
@@ -88,9 +90,12 @@ public class AbstractIntegrationTest {
         }
     }
 
-    @DataProvider(name = "endpoints", parallel = true)
+    @DataProvider(name = ENDPOINTS_DATAPROVIDER, parallel = true)
     public Object[][] getEndpoints() {
         return new String[][]{{"Payara", "http://localhost:8081/todo-app"},
-                {"TomEE", "http://localhost:8082/todo-app"}};
+                {"TomEE", "http://localhost:8082/todo-app"}
+        //        ,
+          //      {"Wildfly", "http://localhost:8083/todo-app"}
+        };
     }
 }
