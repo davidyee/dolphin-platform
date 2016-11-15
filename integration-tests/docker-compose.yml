@@ -8,7 +8,7 @@ tomee-integration:
   ports:
     - "8082:8080"
 
-#wildfly-integration:
-#  build: ./docker-base/wildfly-integration/
-#  ports:
-#    - "8083:8080"
+wildfly-integration:
+  build: ./docker-base/wildfly-integration/
+  ports:
+    - "8083:8080"
