@@ -17,10 +17,6 @@ package org.opendolphin.core.client.comm
 
 import groovy.transform.CompileStatic
 import groovy.util.logging.Log
-import groovyx.gpars.dataflow.KanbanFlow
-import groovyx.gpars.dataflow.KanbanTray
-import groovyx.gpars.dataflow.ProcessingNode
-import org.codehaus.groovy.runtime.StackTraceUtils
 import org.opendolphin.core.Attribute
 import org.opendolphin.core.PresentationModel
 import org.opendolphin.core.Tag
@@ -30,155 +26,34 @@ import org.opendolphin.core.client.ClientModelStore
 import org.opendolphin.core.client.ClientPresentationModel
 import org.opendolphin.core.comm.AttributeMetadataChangedCommand
 import org.opendolphin.core.comm.CallNamedActionCommand
-import org.opendolphin.core.comm.Codec
 import org.opendolphin.core.comm.Command
 import org.opendolphin.core.comm.CreatePresentationModelCommand
 import org.opendolphin.core.comm.DataCommand
 import org.opendolphin.core.comm.DeleteAllPresentationModelsOfTypeCommand
 import org.opendolphin.core.comm.DeletePresentationModelCommand
 import org.opendolphin.core.comm.InitializeAttributeCommand
-import org.opendolphin.core.comm.NamedCommand
 import org.opendolphin.core.comm.PresentationModelResetedCommand
 import org.opendolphin.core.comm.SavedPresentationModelNotification
-import org.opendolphin.core.comm.SignalCommand
 import org.opendolphin.core.comm.SwitchPresentationModelCommand
 import org.opendolphin.core.comm.ValueChangedCommand
 
-import java.util.logging.Level
-
-import static groovyx.gpars.GParsPool.withPool
-
 @Log
-abstract class AbstractClientConnector implements ClientConnector {
-    boolean strictMode = true // disallow value changes that are based on improper old values
-    Codec codec
-    UiThreadHandler uiThreadHandler // must be set from the outside - toolkit specific
+class ClientResponseHandler {
 
-    Closure onException = { Throwable up ->
-        def out = new StringWriter()
-        up.printStackTrace(new PrintWriter(out))
-        log.severe("onException reached, rethrowing in UI Thread, consider setting AbstractClientConnector.onException\n${out.buffer}")
-        uiThreadHandler.executeInsideUiThread { throw up } // not sure whether this is a good default
-    }
+    private final ClientDolphin clientDolphin;
 
-    protected final ClientDolphin clientDolphin
-    protected final ICommandBatcher commandBatcher
+    boolean strictMode = true;
 
-    AbstractClientConnector(ClientDolphin clientDolphin) {
-        this(clientDolphin, null)
-    }
-
-    AbstractClientConnector(ClientDolphin clientDolphin, ICommandBatcher commandBatcher) {
+    ClientResponseHandler(ClientDolphin clientDolphin) {
         this.clientDolphin = clientDolphin
-        this.commandBatcher = commandBatcher ?: new CommandBatcher()
-
-        startCommandProcessing()
-    }
-
-    protected void startCommandProcessing() {
-
-        def transmitter = ProcessingNode.node { trayOut ->
-            def commandsAndHandlers = commandBatcher.waitingBatches.val
-            List<Command> commands = commandsAndHandlers.collect { it.command }
-            if (log.isLoggable(Level.INFO)) {
-                log.info "C: sending batch of size " + commands.size()
-                for (command in commands) { log.info("C:           -> " + command) }
-            }
-
-            def answer = null
-
-            Runnable transmitter = { answer = transmit(commands) }
-            Runnable postWorker  = { trayOut << [response: answer, request: commandsAndHandlers] }
-            doExceptionSafe(transmitter, postWorker)
-        }
-
-        def worker = ProcessingNode.node { KanbanTray trayIn ->
-            Map got = trayIn.take()
-            if (got.response == null) return // we cannot ignore empty responses. They may have an onFinished handler
-
-            Runnable postWork = { processResults(got.response, got.request) }
-            doSafelyInsideUiThread postWork
-        }
-
-        KanbanFlow flow = new KanbanFlow()
-        flow.link transmitter to worker
-        flow.start(1)
     }
 
     protected ClientModelStore getClientModelStore() {
         clientDolphin.clientModelStore
     }
 
-    abstract List<Command> transmit(List<Command> commands)
-
-    @CompileStatic
-    public void send(Command command, OnFinishedHandler callback = null) {
-        // we have some change so regardless of the batching we may have to release a push
-        if (command != pushListener) {
-            release()
-        }
-        // we are inside the UI thread and events calls come in strict order as received by the UI toolkit
-        commandBatcher.batch(new CommandAndHandler(command: command, handler: callback))
-    }
-
-    @CompileStatic
-    void processResults(List<Command> response, List<CommandAndHandler> commandsAndHandlers) {
-        def me = this
-        // see http://jira.codehaus.org/browse/GROOVY-6946
-        def commands = response?.id
-        me.info "C: server responded with ${response?.size()} command(s): ${commands}"
-
-        List<ClientPresentationModel> touchedPresentationModels = new LinkedList<ClientPresentationModel>()
-        List<Map> touchedDataMaps = new LinkedList<Map>()
-        for (Command serverCommand in response) {
-            def touched = me.dispatchHandle serverCommand
-            if (touched && touched instanceof ClientPresentationModel) {
-                touchedPresentationModels << (ClientPresentationModel) touched
-            } else if (touched && touched instanceof Map) {
-                touchedDataMaps << (Map) touched
-            }
-        }
-        def callback = commandsAndHandlers.first().handler // there can only be one relevant handler anyway
-        // added != null check instead of using simple Groovy truth because of NPE through GROOVY-7709
-        if (callback !=null) {
-            callback.onFinished((List<ClientPresentationModel>) touchedPresentationModels.unique { ((ClientPresentationModel) it).id })
-            if (callback instanceof OnFinishedData) {
-                callback.onFinishedData(touchedDataMaps)
-            }
-        }
-    }
-
-    void info(Object message) {
-        log.info message
-    }
-
-    Object dispatchHandle(Command command) {
-        handle command
-    }
-
-    @CompileStatic
-    void doExceptionSafe(Runnable processing, Runnable atLeast = null) {
-        try {
-            processing.run()
-        } catch (e) {
-            StackTraceUtils.deepSanitize(e)
-            onException e
-        } finally {
-            if (atLeast) atLeast.run()
-        }
-    }
-
-    @CompileStatic
-    void doSafelyInsideUiThread(Runnable whatToDo) {
-        Runnable doInside = {
-            if (uiThreadHandler) {
-                uiThreadHandler.executeInsideUiThread whatToDo
-            } else {
-                println "please provide howToProcessInsideUI handler"
-                whatToDo.run()
-            }
-        }
-        doExceptionSafe doInside
+    public Object dispatchHandle(Command command) {
+        handle(command)
     }
 
     def handle(Command serverCommand) {
@@ -209,10 +84,10 @@ abstract class AbstractClientConnector implements ClientConnector {
         List<ClientAttribute> attributes = []
         for (attr in serverCommand.attributes) {
             ClientAttribute attribute = new ClientAttribute(
-                attr.propertyName.toString(),
-                attr.value,
-                attr.qualifier?.toString(),
-                attr.tag ? Tag.tagFor[(String) attr.tag] : Tag.VALUE)
+                    attr.propertyName.toString(),
+                    attr.value,
+                    attr.qualifier?.toString(),
+                    attr.tag ? Tag.tagFor[(String) attr.tag] : Tag.VALUE)
             if(attr.id?.toString()?.endsWith('S')) {
                 attribute.id = attr.id
             }
@@ -279,7 +154,7 @@ abstract class AbstractClientConnector implements ClientConnector {
                 }
             }
         }
-        def presentationModel = null
+        ClientPresentationModel presentationModel = null
         if (serverCommand.pmId) presentationModel = clientModelStore.findPresentationModelById(serverCommand.pmId)
         // here we could have a pmType conflict and we may want to throw an Exception...
         // if there is no pmId, it is most likely an error and CreatePresentationModelCommand should have been used
@@ -329,59 +204,5 @@ abstract class AbstractClientConnector implements ClientConnector {
     ClientPresentationModel handle(CallNamedActionCommand serverCommand) {
         clientDolphin.send(serverCommand.actionName)
         return null
-    }
-
-
-    //////////////////////////////// push support ////////////////////////////////////////
-
-    /** The named command that waits for pushes on the server side */
-    NamedCommand  pushListener   = null;
-    /** The signal command that publishes a "release" event on the respective bus */
-    SignalCommand releaseCommand = null;
-
-    /** whether listening for push events should be done at all. */
-    protected boolean pushEnabled = false;
-
-    /** whether we currently wait for push events (internal state) and may need to release */
-    protected boolean waiting = false;
-
-    /** listens for the pushListener to return. The pushListener must be set and pushEnabled must be true. */
-    public void listen() {
-        if (!pushEnabled) return // allow the loop to end
-        if (waiting) return      // avoid second call while already waiting (?) -> two different push actions not supported
-        waiting = true
-        send(pushListener, new OnFinishedHandlerAdapter() {
-            @Override
-            void onFinished(List<ClientPresentationModel> presentationModels) {
-                // we do nothing here nor do we register a special handler.
-                // The server may have sent commands, though, even CallNamedActionCommand.
-                waiting = false
-                listen() // not a real recursion; is added to event queue
-            }
-        })
-    }
-
-    /** Release the current push listener, which blocks the sending queue.
-     *  Does nothing in case that the push listener is not active.
-     * */
-    protected void release() {
-        if (!waiting) {
-            return      // there is no point in releasing if we do not wait. Avoid excessive releasing.
-        }
-        waiting = false // release is under way
-        withPool {
-            def transmitAsynchronously = this.&transmit.asyncFun()
-            transmitAsynchronously([releaseCommand]) // sneaks by the strict command sequence
-        }
-    }
-
-    @Override
-    void setPushEnabled(boolean pushEnabled) {
-        this.pushEnabled = pushEnabled;
-    }
-
-    @Override
-    boolean isPushEnabled() {
-        return this.pushEnabled;
     }
 }

@@ -13,21 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.opendolphin.core.client.comm
+package com.canoo.dolphin.impl.converters;
 
-import org.opendolphin.core.comm.Command
-import org.opendolphin.core.comm.EmptyNotification
-import org.opendolphin.core.comm.NamedCommand
+import com.canoo.dolphin.converter.Converter;
 
-class CommandAndHandler {
-    Command command
-    OnFinishedHandler handler
-
-    /** whether this command/handler can be batched */
-    boolean isBatchable() {
-        if (handler)                                return false
-        if (command instanceof NamedCommand)        return false
-        if (command instanceof EmptyNotification)   return false
-        true
-    }
+/**
+ * Created by hendrikebbers on 25.10.16.
+ */
+public abstract class AbstractStringConverter<B> implements Converter<B, String> {
 }
+

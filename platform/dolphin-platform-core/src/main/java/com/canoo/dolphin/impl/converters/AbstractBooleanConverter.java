@@ -13,24 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.opendolphin.core.client.comm
+package com.canoo.dolphin.impl.converters;
 
-import org.opendolphin.core.client.ClientPresentationModel
+import com.canoo.dolphin.converter.Converter;
 
 /**
- * Convenience class for OnFinishedData
+ * Created by hendrikebbers on 25.10.16.
  */
-abstract public class OnFinishedDataAdapter implements OnFinishedData {
-    @Override
-    void onFinished(List<ClientPresentationModel> presentationModels) {
-            // ignore
-    }
-    static OnFinishedData withAction (Closure cl) {
-        return new OnFinishedDataAdapter() {
-            @Override
-            void onFinishedData(List<Map> data) {
-                cl.call(data)
-            }
-        }
-    }
+public abstract class AbstractBooleanConverter<B> implements Converter<B, Boolean> {
 }

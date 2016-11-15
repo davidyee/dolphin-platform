@@ -15,14 +15,15 @@
  */
 package com.canoo.dolphin.internal.info;
 
-import com.canoo.dolphin.impl.Converters;
+import com.canoo.dolphin.converter.Converter;
+import com.canoo.dolphin.converter.ValueConverterException;
 
 public abstract class PropertyInfo {
 
     private final String attributeName;
-    private final Converters.Converter converter;
+    private final Converter converter;
 
-    public PropertyInfo(String attributeName, Converters.Converter converter) {
+    public PropertyInfo(String attributeName, Converter converter) {
         this.attributeName = attributeName;
         this.converter = converter;
     }
@@ -35,11 +36,11 @@ public abstract class PropertyInfo {
 
     public abstract void setPriviliged(Object bean, Object value);
 
-    public Object convertFromDolphin(Object value) {
+    public Object convertFromDolphin(Object value) throws ValueConverterException {
         return converter.convertFromDolphin(value);
     }
 
-    public Object convertToDolphin(Object value) {
+    public Object convertToDolphin(Object value) throws ValueConverterException {
         return converter.convertToDolphin(value);
     }
 }

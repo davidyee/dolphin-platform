@@ -15,18 +15,23 @@
  */
 package org.opendolphin.core.client.comm
 
-import groovyx.gpars.dataflow.DataflowQueue
+public class CommandBatcher implements ICommandBatcher {
 
-class CommandBatcher implements ICommandBatcher {
+    private final DataflowQueue<List<CommandAndHandler>> waitingBatches;
 
-    final DataflowQueue<List<CommandAndHandler>> waitingBatches = new DataflowQueue<>()
+    public CommandBatcher() {
+        this.waitingBatches = new CommandBatcherQueue();
+    }
 
-	void batch(CommandAndHandler commandAndHandler) {
-        waitingBatches << [commandAndHandler]
-	}
+    public void batch(CommandAndHandler commandAndHandler) {
+        waitingBatches.add(Collections.singletonList(commandAndHandler));
+    }
 
-	boolean isEmpty() {
-		true
-	}
+    public boolean isEmpty() {
+        return waitingBatches.length() == 0;
+    }
 
+    public DataflowQueue<List<CommandAndHandler>> getWaitingBatches() {
+        return waitingBatches;
+    }
 }

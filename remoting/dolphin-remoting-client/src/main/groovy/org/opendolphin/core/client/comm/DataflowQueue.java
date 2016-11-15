@@ -13,16 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.opendolphin.core.client.comm
+package org.opendolphin.core.client.comm;
 
-import groovyx.gpars.agent.Agent
+import java.util.concurrent.TimeUnit;
 
-class RunLaterUiThreadHandler implements UiThreadHandler{
+/**
+ * Created by hendrikebbers on 29.08.16.
+ */
+public interface DataflowQueue<T> {
 
-    protected final runner = Agent.agent(1)
+    T getVal() throws InterruptedException;
 
-    @Override
-    void executeInsideUiThread(Runnable runnable) {
-        runner << { runnable.run() }
-    }
+    T getVal(long value,TimeUnit timeUnit) throws InterruptedException;
+
+    void add(T value);
+
+    int length();
+
+
 }
