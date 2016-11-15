@@ -12,3 +12,8 @@ wildfly-integration:
   build: ./docker-base/wildfly-integration/
   ports:
     - "8083:8080"
+
+# spring-boot:
+#   build: ./docker-base/spring-boot/
+#   ports:
+#     - "8084:8080"

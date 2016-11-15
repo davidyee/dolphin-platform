@@ -94,7 +94,8 @@ public class AbstractIntegrationTest {
     public Object[][] getEndpoints() {
         return new String[][]{{"Payara", "http://localhost:8081/todo-app"},
                 {"TomEE", "http://localhost:8082/todo-app"},
-                {"Wildfly", "http://localhost:8083/todo-app"}
+                {"Wildfly", "http://localhost:8083/todo-app"}//,
+                //{"Spring-Boot", "http://localhost:8084/todo-app"}
         };
     }
 }
